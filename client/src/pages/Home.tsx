@@ -21,8 +21,8 @@ export default function Home() {
   const [trialState, setTrialState] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [trialMessage, setTrialMessage] = useState("");
   const heroRef = useRef<HTMLElement>(null);
-  const pointerTargetRef = useRef({ imageX: 0, imageY: 0, contentX: 0, contentY: 0, tiltX: 0, tiltY: 0 });
-  const pointerCurrentRef = useRef({ imageX: 0, imageY: 0, contentX: 0, contentY: 0, tiltX: 0, tiltY: 0 });
+  const pointerTargetRef = useRef({ imageX: 0, imageY: 0, contentX: 0, contentY: 0, tiltX: 0, tiltY: 0, glareX: 0, glareY: 0, glareOpacity: 0 });
+  const pointerCurrentRef = useRef({ imageX: 0, imageY: 0, contentX: 0, contentY: 0, tiltX: 0, tiltY: 0, glareX: 0, glareY: 0, glareOpacity: 0 });
   const pointerFrameRef = useRef(0);
   const [reducedMotion, setReducedMotion] = useState(() => {
     try { const stored = window.localStorage.getItem("workflo-reduced-motion"); return stored === "true" || (stored === null && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch { return false; }
@@ -41,6 +41,9 @@ export default function Home() {
       hero.style.setProperty("--hero-parallax-y", `${current.contentY.toFixed(2)}px`);
       hero.style.setProperty("--hero-image-tilt-x", `${current.tiltX.toFixed(2)}deg`);
       hero.style.setProperty("--hero-image-tilt-y", `${current.tiltY.toFixed(2)}deg`);
+      hero.style.setProperty("--hero-glare-x", `${current.glareX.toFixed(2)}px`);
+      hero.style.setProperty("--hero-glare-y", `${current.glareY.toFixed(2)}px`);
+      hero.style.setProperty("--hero-glare-opacity", current.glareOpacity.toFixed(3));
     }
     const distance = Math.max(...(Object.keys(target) as Array<keyof typeof target>).map((key) => Math.abs(target[key] - current[key])));
     pointerFrameRef.current = distance > 0.015 ? window.requestAnimationFrame(renderPointerDepth) : 0;
@@ -53,11 +56,23 @@ export default function Home() {
     const bounds = event.currentTarget.getBoundingClientRect();
     const x = (event.clientX - bounds.left) / bounds.width * 2 - 1;
     const y = (event.clientY - bounds.top) / bounds.height * 2 - 1;
-    pointerTargetRef.current = { imageX: x * -7, imageY: y * -5, contentX: x * 2.6, contentY: y * 1.8, tiltX: y * -1.5, tiltY: x * 1.9 };
+    const ultrawideTiltFactor = window.matchMedia("(min-width: 1600px) and (min-aspect-ratio: 21/9)").matches ? 0.68 : 1;
+    pointerTargetRef.current = { imageX: x * -7, imageY: y * -5, contentX: x * 2.6, contentY: y * 1.8, tiltX: y * -1.5 * ultrawideTiltFactor, tiltY: x * 1.9 * ultrawideTiltFactor, glareX: x * 72, glareY: y * 54, glareOpacity: 0.16 };
     schedulePointerDepth();
   };
 
-  const resetPointer = () => { pointerTargetRef.current = { imageX: 0, imageY: 0, contentX: 0, contentY: 0, tiltX: 0, tiltY: 0 }; schedulePointerDepth(); };
+  const resetPointer = (immediate = false) => {
+    const restingDepth = { imageX: 0, imageY: 0, contentX: 0, contentY: 0, tiltX: 0, tiltY: 0, glareX: 0, glareY: 0, glareOpacity: 0 };
+    pointerTargetRef.current = restingDepth;
+    if (!immediate) return schedulePointerDepth();
+    pointerCurrentRef.current = restingDepth;
+    window.cancelAnimationFrame(pointerFrameRef.current);
+    pointerFrameRef.current = 0;
+    const hero = heroRef.current;
+    if (hero) ["--hero-image-x", "--hero-image-y", "--hero-parallax-x", "--hero-parallax-y"].forEach((property) => hero.style.setProperty(property, "0px"));
+    if (hero) ["--hero-image-tilt-x", "--hero-image-tilt-y"].forEach((property) => hero.style.setProperty(property, "0deg"));
+    if (hero) { hero.style.setProperty("--hero-glare-x", "0px"); hero.style.setProperty("--hero-glare-y", "0px"); hero.style.setProperty("--hero-glare-opacity", "0"); }
+  };
 
   useEffect(() => {
     const hero = heroRef.current;
@@ -130,10 +145,12 @@ export default function Home() {
 
   useEffect(() => { try { window.localStorage.setItem("workflo-reduced-motion", String(reducedMotion)); } catch { /* Preference persistence is optional. */ } }, [reducedMotion]);
 
-  return <main ref={heroRef} className={`minimal-hero ${reducedMotion ? "motion-reduced" : ""}`} onPointerMove={updatePointer} onPointerLeave={resetPointer}>
+  return <main ref={heroRef} className={`minimal-hero ${reducedMotion ? "motion-reduced" : ""}`} onPointerMove={updatePointer} onPointerLeave={() => resetPointer()}>
     <div className="minimal-hero__sandbox-art" aria-hidden="true"><img className="minimal-hero__sandbox-poster" src="/manus-storage/workflo-sandbox-immersive-hero_b63d7110.jpg" alt="" onLoad={() => setHeroImageLoaded(true)} /></div>
     <div className="minimal-hero__scrim" aria-hidden="true" />
     <Link href="/" className={`minimal-hero__brand ${heroImageLoaded ? "is-ready" : ""}`} aria-label="Workflo home"><span>W/</span><strong>WORKFLO</strong></Link>
+    <button className={`minimal-hero__motion-toggle ${heroImageLoaded ? "is-ready" : ""}`} type="button" aria-pressed={!reducedMotion} onClick={() => { const next = !reducedMotion; setReducedMotion(next); if (next) resetPointer(true); }}>Motion: {reducedMotion ? "Off" : "On"}</button>
+    <span className="minimal-hero__glare" aria-hidden="true" />
     <div className={`minimal-hero__loader ${heroImageLoaded ? "is-complete" : ""}`} aria-live="polite" aria-label="Loading Workflo"><span className="minimal-hero__loader-orbit" aria-hidden="true" /><div><span>LOADING</span></div><i><b style={{ transform: `scaleX(${heroImageLoaded ? 1 : 0.28})` }} /></i></div>
     <div className={`minimal-hero__content ${heroImageLoaded ? "is-ready" : ""}`}>
       <h1><span className="hero-reveal" aria-label={headlineTagline}>{headlineTagline}</span></h1>

@@ -135,3 +135,8 @@
 - [x] Smooth the hero image motion and add a restrained 3D tilt that respects reduced-motion settings.
 - [x] Apply a matching neumorphic pressed state to documentation sidebar links.
 - [x] Validate the refined motion and navigation feedback, then save a delivery checkpoint.
+- [x] Review the current motion preference, sandbox image layer, and Docs changelog interaction implementation.
+- [x] Add a visible, accessible landing motion toggle that persists the visitor’s preference.
+- [x] Refine sandbox tilt for ultrawide screens and add a restrained cursor-driven glare layer.
+- [x] Apply matching neumorphic pressed feedback to Docs changelog controls.
+- [x] Validate the motion preference, sandbox effect, and sidebar interactions, then save a delivery checkpoint.

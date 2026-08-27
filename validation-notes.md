@@ -15,3 +15,9 @@ The latest interaction review confirms that the sidebar changelog opens an acces
 The refined cursor-depth check confirms the interpolation path updates both image translation and tilt variables gradually, yielding nonzero rotation values without a hard visual jump.
 
 The current Docs review confirms the sidebar navigation remains present and the nested desktop press-state rule is active, including its intended inset shadow treatment.
+
+The landing motion preference control was verified in the browser: its visible label changed from Motion: On to Motion: Off, and the sandbox returned to its static presentation.
+
+The visitor-facing Motion: On preference was restored after validation. A subsequent pointer check confirmed both nonzero sandbox tilt and a gradually increasing glare opacity.
+
+The updated Docs review confirms the changelog buttons remain available in the sidebar and still open the detailed release-notes modal after receiving the matching pressed-depth treatment.
