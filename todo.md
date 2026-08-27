@@ -64,3 +64,6 @@
 - [x] Refine the typewriter cursor to blink briefly and fade after completing the tagline.
 - [x] Add a custom Workflo technical-glyph favicon to the application shell.
 - [x] Verify the completed-load motion and favicon configuration, then save a delivery checkpoint.
+- [x] Add a subtle underline reveal after the typewriter cursor finishes its completion sequence.
+- [x] Add a reduced-motion navigation control that pauses WebGL animation and disables typing motion.
+- [x] Validate the hero completion and reduced-motion behavior, then save a delivery checkpoint.

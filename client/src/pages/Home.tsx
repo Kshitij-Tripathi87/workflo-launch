@@ -13,6 +13,7 @@ export default function Home() {
   const [sceneReady, setSceneReady] = useState(false);
   const [taglineLength, setTaglineLength] = useState(0);
   const [taglineComplete, setTaglineComplete] = useState(false);
+  const [underlineVisible, setUnderlineVisible] = useState(false);
   const [actionHovered, setActionHovered] = useState(false);
   const [isEnteringConsole, setIsEnteringConsole] = useState(false);
   const pointerPosition = useRef({ x: 0, y: 0 });
@@ -20,6 +21,9 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const [performanceMode, setPerformanceMode] = useState<ScenePerformanceMode>(() => {
     try { const stored = window.localStorage.getItem("workflo-scene-performance"); return stored === "efficient" || stored === "balanced" ? stored : "balanced"; } catch { return "balanced"; }
+  });
+  const [reducedMotion, setReducedMotion] = useState(() => {
+    try { const stored = window.localStorage.getItem("workflo-reduced-motion"); return stored === "true" || (stored === null && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch { return false; }
   });
 
   const togglePerformance = () => {
@@ -31,7 +35,7 @@ export default function Home() {
   };
 
   const updatePointer = (event: PointerEvent<HTMLElement>) => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (reducedMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const bounds = event.currentTarget.getBoundingClientRect();
     const x = (event.clientX - bounds.left) / bounds.width * 2 - 1;
     const y = (event.clientY - bounds.top) / bounds.height * 2 - 1;
@@ -49,6 +53,7 @@ export default function Home() {
   const enterConsole = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     if (isEnteringConsole) return;
+    if (reducedMotion) { setLocation("/dashboard"); return; }
     setActionHovered(true);
     setIsEnteringConsole(true);
     window.setTimeout(() => setLocation("/dashboard"), 440);
@@ -56,25 +61,30 @@ export default function Home() {
 
   useEffect(() => {
     if (!sceneReady) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setTaglineLength(headlineTagline.length); setTaglineComplete(true); return; }
+    if (reducedMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setTaglineLength(headlineTagline.length); setTaglineComplete(true); setUnderlineVisible(true); return; }
     setTaglineLength(0);
     setTaglineComplete(false);
+    setUnderlineVisible(false);
     let current = 0;
+    let settleTimer = 0;
     const timer = window.setInterval(() => {
       current += 1;
       setTaglineLength(current);
-      if (current >= headlineTagline.length) { window.clearInterval(timer); setTaglineComplete(true); }
+      if (current >= headlineTagline.length) { window.clearInterval(timer); setTaglineComplete(true); settleTimer = window.setTimeout(() => setUnderlineVisible(true), 1120); }
     }, 48);
-    return () => window.clearInterval(timer);
-  }, [sceneReady, headlineTagline.length]);
+    return () => { window.clearInterval(timer); window.clearTimeout(settleTimer); };
+  }, [sceneReady, headlineTagline.length, reducedMotion]);
 
-  return <main ref={heroRef} className={`minimal-hero ${isEnteringConsole ? "is-entering" : ""}`} onPointerMove={updatePointer} onPointerLeave={resetPointer}>
-    <SandboxScene scrollProgress={0.38} resetSignal={0} performanceMode={performanceMode} runProgress={0.82} executionStage={2} activeHotspot={null} onHotspotSelect={() => undefined} showHotspots={false} onSceneProgress={setSceneProgress} onSceneReady={() => setSceneReady(true)} pointerPosition={pointerPosition} actionHovered={actionHovered} entering={isEnteringConsole} />
+  useEffect(() => { try { window.localStorage.setItem("workflo-reduced-motion", String(reducedMotion)); } catch { /* Preference persistence is optional. */ } }, [reducedMotion]);
+
+  return <main ref={heroRef} className={`minimal-hero ${isEnteringConsole ? "is-entering" : ""} ${reducedMotion ? "motion-reduced" : ""}`} onPointerMove={updatePointer} onPointerLeave={resetPointer}>
+    <SandboxScene scrollProgress={0.38} resetSignal={0} performanceMode={performanceMode} runProgress={0.82} executionStage={2} activeHotspot={null} onHotspotSelect={() => undefined} showHotspots={false} onSceneProgress={setSceneProgress} onSceneReady={() => setSceneReady(true)} pointerPosition={pointerPosition} actionHovered={actionHovered} entering={isEnteringConsole} paused={reducedMotion} />
     <div className="minimal-hero__scrim" aria-hidden="true" />
     <Link href="/" className={`minimal-hero__brand ${sceneReady ? "is-ready" : ""}`} aria-label="Workflo home"><span>W/</span><strong>WORKFLO</strong><small>AUTONOMOUS QA</small></Link>
+    <button className={`minimal-hero__motion-control ${sceneReady ? "is-ready" : ""}`} type="button" aria-pressed={reducedMotion} onClick={() => setReducedMotion((value) => !value)}>{reducedMotion ? "MOTION: OFF" : "MOTION: ON"}</button>
     <div className={`minimal-hero__loader ${sceneReady ? "is-complete" : ""}`} aria-live="polite" aria-label="Loading Workflo sandbox"><div><span>INITIALIZING SANDBOX</span><strong>{Math.round(sceneProgress * 100)}%</strong></div><i><b style={{ transform: `scaleX(${sceneProgress})` }} /></i></div>
     <div className={`minimal-hero__content ${sceneReady ? "is-ready" : ""}`}>
-      <h1><span className={`typewriter-tagline ${taglineComplete ? "is-complete" : ""}`} aria-label={headlineTagline}><span aria-hidden="true">{headlineTagline.slice(0, taglineLength)}</span><b aria-hidden="true" /></span><br /><em>Evidence for every release.</em></h1>
+      <h1><span className={`typewriter-tagline ${taglineComplete ? "is-complete" : ""}`} aria-label={headlineTagline}><span aria-hidden="true">{headlineTagline.slice(0, taglineLength)}</span><b aria-hidden="true" /><i className={underlineVisible ? "is-visible" : ""} aria-hidden="true" /></span><br /><em>Evidence for every release.</em></h1>
       <p>Workflo runs software tests in isolated environments and returns a verifiable receipt for every execution.</p>
       <div className="minimal-hero__actions"><Link href="/dashboard" onClick={enterConsole} onPointerEnter={() => setActionHovered(true)} onPointerLeave={() => setActionHovered(false)}>QA Console <ArrowUpRight size={17} /></Link><Link href="/docs" onPointerEnter={() => setActionHovered(true)} onPointerLeave={() => setActionHovered(false)}>Documentation <ArrowUpRight size={17} /></Link></div>
     </div>

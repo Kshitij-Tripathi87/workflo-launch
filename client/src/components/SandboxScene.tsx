@@ -19,12 +19,13 @@ type SandboxSceneProps = {
   pointerPosition?: { current: { x: number; y: number } };
   actionHovered?: boolean;
   entering?: boolean;
+  paused?: boolean;
 };
 
 export type ScenePerformanceMode = "balanced" | "efficient";
 export type SandboxHotspotId = "runtime" | "network" | "receipt";
 
-export default function SandboxScene({ scrollProgress, resetSignal, performanceMode, runProgress, executionStage, activeHotspot, onHotspotSelect, showHotspots = true, onSceneProgress, onSceneReady, pointerPosition, actionHovered = false, entering = false }: SandboxSceneProps) {
+export default function SandboxScene({ scrollProgress, resetSignal, performanceMode, runProgress, executionStage, activeHotspot, onHotspotSelect, showHotspots = true, onSceneProgress, onSceneReady, pointerPosition, actionHovered = false, entering = false, paused = false }: SandboxSceneProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef(scrollProgress);
   const resetRef = useRef(resetSignal);
@@ -38,6 +39,7 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
   const pointerPositionRef = useRef(pointerPosition);
   const actionHoveredRef = useRef(actionHovered);
   const enteringRef = useRef(entering);
+  const pausedRef = useRef(paused);
   const [unavailable, setUnavailable] = useState(false);
 
   scrollRef.current = scrollProgress;
@@ -52,6 +54,7 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
   pointerPositionRef.current = pointerPosition;
   actionHoveredRef.current = actionHovered;
   enteringRef.current = entering;
+  pausedRef.current = paused;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -297,6 +300,7 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
     };
 
     const onPointerDown = (event: PointerEvent) => {
+      if (pausedRef.current) return;
       dragging = true;
       startX = event.clientX;
       startY = event.clientY;
@@ -316,6 +320,7 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
       return hit?.object.userData.hotspot as SandboxHotspotId | undefined;
     };
     const onPointerMove = (event: PointerEvent) => {
+      if (pausedRef.current) { renderer.domElement.style.cursor = "default"; return; }
       if (!dragging) {
         renderer.domElement.style.cursor = getHotspotAtPointer(event) ? "pointer" : "grab";
         return;
@@ -341,6 +346,16 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
     let animationFrame = 0;
     let firstFrame = true;
     const draw = (time: number) => {
+      if (pausedRef.current) {
+        renderer.render(scene, camera);
+        if (firstFrame) {
+          firstFrame = false;
+          onSceneProgressRef.current?.(1);
+          onSceneReadyRef.current?.();
+        }
+        animationFrame = window.requestAnimationFrame(draw);
+        return;
+      }
       if (lastPerformanceMode !== performanceRef.current) {
         lastPerformanceMode = performanceRef.current;
         setQuality(lastPerformanceMode);
