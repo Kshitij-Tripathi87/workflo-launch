@@ -51,7 +51,7 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(31, 1, 0.1, 100);
-    camera.position.set(0.1, 0.15, 8.6);
+    camera.position.set(0.1, 0.15, 11.4);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, performanceMode === "efficient" ? 1 : 1.65));
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -199,12 +199,15 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
     let dragging = false;
     let startX = 0;
     let startY = 0;
-    let baseY = root.rotation.y;
-    let baseX = root.rotation.x;
+    let baseY = 0;
+    let baseX = 0;
+    let dragYaw = 0;
+    let dragPitch = 0;
     let targetY = root.rotation.y;
     let targetX = root.rotation.x;
     let lastReset = resetRef.current;
     let lastPerformanceMode = performanceRef.current;
+    const sequenceStartedAt = performance.now();
 
     const pointOnStream = (path: THREE.Vector3[], position: number) => {
       const scaled = position * (path.length - 1);
@@ -236,8 +239,8 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
       dragging = true;
       startX = event.clientX;
       startY = event.clientY;
-      baseY = targetY;
-      baseX = targetX;
+      baseY = dragYaw;
+      baseX = dragPitch;
       renderer.domElement.setPointerCapture(event.pointerId);
       renderer.domElement.style.cursor = "grabbing";
     };
@@ -256,8 +259,8 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
         renderer.domElement.style.cursor = getHotspotAtPointer(event) ? "pointer" : "grab";
         return;
       }
-      targetY = baseY + (event.clientX - startX) * 0.008;
-      targetX = THREE.MathUtils.clamp(baseX + (event.clientY - startY) * 0.006, -0.65, 0.33);
+      dragYaw = baseY + (event.clientX - startX) * 0.008;
+      dragPitch = THREE.MathUtils.clamp(baseX + (event.clientY - startY) * 0.006, -0.52, 0.38);
     };
     const onPointerUp = (event: PointerEvent) => {
       const moved = Math.hypot(event.clientX - startX, event.clientY - startY);
@@ -282,15 +285,22 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
       }
       if (lastReset !== resetRef.current) {
         lastReset = resetRef.current;
-        targetY = -0.56;
-        targetX = -0.16;
+        dragYaw = 0;
+        dragPitch = 0;
       }
-      if (!dragging && !reduceMotion) targetY += lastPerformanceMode === "efficient" ? 0.0007 : 0.0014;
+      const depth = scrollRef.current;
+      const easedDepth = depth * depth * (3 - 2 * depth);
+      const introProgress = reduceMotion ? 1 : Math.min(1, (time - sequenceStartedAt) / 1500);
+      const introEase = 1 - Math.pow(1 - introProgress, 3);
+      const idleYaw = reduceMotion ? 0 : Math.sin(time * 0.00034) * (lastPerformanceMode === "efficient" ? 0.028 : 0.052);
+      targetY = -0.56 + easedDepth * 1.38 + idleYaw + dragYaw;
+      targetX = -0.16 + easedDepth * 0.12 + dragPitch;
       root.rotation.y += (targetY - root.rotation.y) * 0.08;
       root.rotation.x += (targetX - root.rotation.x) * 0.08;
-      const depth = scrollRef.current;
-      camera.position.z += ((8.6 - depth * 1.4) - camera.position.z) * 0.06;
-      camera.position.y += ((0.15 + depth * 0.18) - camera.position.y) * 0.06;
+      const entryDistance = THREE.MathUtils.lerp(11.4, 9.55, introEase) - easedDepth * 8.5;
+      camera.position.z += (entryDistance - camera.position.z) * 0.075;
+      camera.position.y += ((0.15 + easedDepth * 0.24) - camera.position.y) * 0.075;
+      camera.lookAt(0, -0.27 + easedDepth * 0.2, -0.08);
       const runIntensity = progressRef.current;
       lights.children.forEach((node, index) => { node.scale.setScalar(0.72 + runIntensity * 0.36 + (reduceMotion ? 0 : Math.sin(time * 0.0022 + index) * 0.1)); });
       hotspotNodes.forEach((hotspot, index) => {

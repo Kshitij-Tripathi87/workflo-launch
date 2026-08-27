@@ -41,24 +41,30 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    let frame = 0;
     const updateDepth = () => {
-      const hero = heroRef.current;
-      if (!hero) return;
-      const travel = Math.max(1, hero.offsetHeight - window.innerHeight + 74);
-      const current = Math.min(1, Math.max(0, (window.scrollY - hero.offsetTop + 74) / travel));
-      setScrollProgress(current);
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        const hero = heroRef.current;
+        if (!hero) return;
+        const travel = Math.max(1, hero.offsetHeight - window.innerHeight + 74);
+        const current = Math.min(1, Math.max(0, (window.scrollY - hero.offsetTop + 74) / travel));
+        setScrollProgress((previous) => Math.abs(previous - current) > 0.002 ? current : previous);
+        frame = 0;
+      });
     };
     updateDepth();
     window.addEventListener("scroll", updateDepth, { passive: true });
     window.addEventListener("resize", updateDepth);
-    return () => { window.removeEventListener("scroll", updateDepth); window.removeEventListener("resize", updateDepth); };
+    return () => { window.cancelAnimationFrame(frame); window.removeEventListener("scroll", updateDepth); window.removeEventListener("resize", updateDepth); };
   }, []);
 
   useEffect(() => { try { window.localStorage.setItem("workflo-scene-performance", performanceMode); } catch { /* Storage may be unavailable in private contexts. */ } }, [performanceMode]);
 
   const heroStyle = {
-    "--box-scale": `${1 + scrollProgress * 0.1}`,
-    "--box-shift-y": `${scrollProgress * 3}%`,
+    "--box-scale": `${1 + scrollProgress * 0.76}`,
+    "--box-shift-x": `${scrollProgress * -44}vw`,
+    "--box-shift-y": `${scrollProgress * 1.5}%`,
   } as CSSProperties;
   const entryOpacity = Math.min(1, Math.max(0, (scrollProgress - 0.28) * 2.1));
 
@@ -76,6 +82,7 @@ export default function Home() {
             <div className="hero-proof-row"><div><span className="proof-value">01</span><span className="proof-label">isolated<br />environment</span></div><div><span className="proof-value">100%</span><span className="proof-label">recorded<br />execution</span></div><div><span className="proof-value">0</span><span className="proof-label">production credentials<br />required</span></div></div>
             <div className="hero-assurance" aria-label="Privacy and security controls"><div><ShieldCheck size={15} /><span>PRIVACY-FIRST EXECUTION</span><strong>Ephemeral environments keep each run contained.</strong></div><div><LockKeyhole size={15} /><span>CONTROLLED ACCESS</span><strong>No production credentials are required for execution.</strong></div><div><FileCheck2 size={15} /><span>COMPLIANCE EVIDENCE</span><strong>Receipts provide a durable record for review.</strong></div></div>
           </div>
+          <div className="hero-scroll-prompt" style={{ opacity: Math.max(0, 1 - scrollProgress * 2.4) }}><span>SCROLL TO ENTER SANDBOX</span><i /></div>
           <div className="hero-visual hero-visual--webgl reveal-up reveal-delay-1" style={heroStyle}>
             <SandboxScene scrollProgress={scrollProgress} resetSignal={resetSignal} performanceMode={performanceMode} runProgress={activeRun.progress / 100} executionStage={runStage} activeHotspot={activeHotspot} onHotspotSelect={setActiveHotspot} />
             <div className="hero-visual-shade" />

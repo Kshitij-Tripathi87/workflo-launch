@@ -21,3 +21,6 @@
 - [x] Synchronize particle-stream intensity and speed with execution stages.
 - [x] Add clickable WebGL hotspots with detailed sandbox-control and receipt-artifact panels.
 - [x] Validate the persistent interactive scene and save a delivery checkpoint.
+- [x] Rework the main hero into a first-load cinematic sandbox-entry sequence.
+- [x] Couple enclosure rotation and camera travel directly to scroll progress so the viewer enters the runtime.
+- [x] Optimize the 3D update loop for smooth scroll-driven playback and validate the hero experience.
