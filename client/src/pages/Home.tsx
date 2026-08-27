@@ -12,6 +12,7 @@ export default function Home() {
   const [sceneProgress, setSceneProgress] = useState(0.08);
   const [sceneReady, setSceneReady] = useState(false);
   const [taglineLength, setTaglineLength] = useState(0);
+  const [taglineComplete, setTaglineComplete] = useState(false);
   const [actionHovered, setActionHovered] = useState(false);
   const [isEnteringConsole, setIsEnteringConsole] = useState(false);
   const pointerPosition = useRef({ x: 0, y: 0 });
@@ -55,13 +56,14 @@ export default function Home() {
 
   useEffect(() => {
     if (!sceneReady) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setTaglineLength(headlineTagline.length); return; }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setTaglineLength(headlineTagline.length); setTaglineComplete(true); return; }
     setTaglineLength(0);
+    setTaglineComplete(false);
     let current = 0;
     const timer = window.setInterval(() => {
       current += 1;
       setTaglineLength(current);
-      if (current >= headlineTagline.length) window.clearInterval(timer);
+      if (current >= headlineTagline.length) { window.clearInterval(timer); setTaglineComplete(true); }
     }, 48);
     return () => window.clearInterval(timer);
   }, [sceneReady, headlineTagline.length]);
@@ -72,7 +74,7 @@ export default function Home() {
     <Link href="/" className={`minimal-hero__brand ${sceneReady ? "is-ready" : ""}`} aria-label="Workflo home"><span>W/</span><strong>WORKFLO</strong><small>AUTONOMOUS QA</small></Link>
     <div className={`minimal-hero__loader ${sceneReady ? "is-complete" : ""}`} aria-live="polite" aria-label="Loading Workflo sandbox"><div><span>INITIALIZING SANDBOX</span><strong>{Math.round(sceneProgress * 100)}%</strong></div><i><b style={{ transform: `scaleX(${sceneProgress})` }} /></i></div>
     <div className={`minimal-hero__content ${sceneReady ? "is-ready" : ""}`}>
-      <h1><span className="typewriter-tagline" aria-label={headlineTagline}><span aria-hidden="true">{headlineTagline.slice(0, taglineLength)}</span><b aria-hidden="true" /></span><br /><em>Evidence for every release.</em></h1>
+      <h1><span className={`typewriter-tagline ${taglineComplete ? "is-complete" : ""}`} aria-label={headlineTagline}><span aria-hidden="true">{headlineTagline.slice(0, taglineLength)}</span><b aria-hidden="true" /></span><br /><em>Evidence for every release.</em></h1>
       <p>Workflo runs software tests in isolated environments and returns a verifiable receipt for every execution.</p>
       <div className="minimal-hero__actions"><Link href="/dashboard" onClick={enterConsole} onPointerEnter={() => setActionHovered(true)} onPointerLeave={() => setActionHovered(false)}>QA Console <ArrowUpRight size={17} /></Link><Link href="/docs" onPointerEnter={() => setActionHovered(true)} onPointerLeave={() => setActionHovered(false)}>Documentation <ArrowUpRight size={17} /></Link></div>
     </div>
