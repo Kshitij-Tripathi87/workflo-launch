@@ -72,3 +72,6 @@
 - [x] Create and integrate a clearer, more sophisticated dark 3D sandbox visual direction.
 - [x] Refine the hero’s interactive motion, performance, and action UX without adding unnecessary content.
 - [x] Validate the redesigned landing page and save a delivery checkpoint.
+- [x] Replace the current opening hero phrase with a new concise professional headline.
+- [x] Reduce the landing hero to only its headline and a single supporting subheading.
+- [x] Update hero-copy regression coverage and validate the simplified layout.
