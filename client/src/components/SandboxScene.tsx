@@ -18,12 +18,13 @@ type SandboxSceneProps = {
   onSceneReady?: () => void;
   pointerPosition?: { current: { x: number; y: number } };
   actionHovered?: boolean;
+  entering?: boolean;
 };
 
 export type ScenePerformanceMode = "balanced" | "efficient";
 export type SandboxHotspotId = "runtime" | "network" | "receipt";
 
-export default function SandboxScene({ scrollProgress, resetSignal, performanceMode, runProgress, executionStage, activeHotspot, onHotspotSelect, showHotspots = true, onSceneProgress, onSceneReady, pointerPosition, actionHovered = false }: SandboxSceneProps) {
+export default function SandboxScene({ scrollProgress, resetSignal, performanceMode, runProgress, executionStage, activeHotspot, onHotspotSelect, showHotspots = true, onSceneProgress, onSceneReady, pointerPosition, actionHovered = false, entering = false }: SandboxSceneProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef(scrollProgress);
   const resetRef = useRef(resetSignal);
@@ -36,6 +37,7 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
   const onSceneReadyRef = useRef(onSceneReady);
   const pointerPositionRef = useRef(pointerPosition);
   const actionHoveredRef = useRef(actionHovered);
+  const enteringRef = useRef(entering);
   const [unavailable, setUnavailable] = useState(false);
 
   scrollRef.current = scrollProgress;
@@ -49,6 +51,7 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
   onSceneReadyRef.current = onSceneReady;
   pointerPositionRef.current = pointerPosition;
   actionHoveredRef.current = actionHovered;
+  enteringRef.current = entering;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -150,6 +153,20 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
     streamParticles.renderOrder = 5;
     root.add(streamParticles);
 
+    const maxFloatingParticles = 72;
+    const floatingPositions = new Float32Array(maxFloatingParticles * 3);
+    const floatingAnchors = Array.from({ length: maxFloatingParticles }, (_, index) => new THREE.Vector3(
+      ((index * 47) % 100) / 100 * 4.8 - 2.4,
+      ((index * 29) % 100) / 100 * 2.9 - 1.2,
+      ((index * 61) % 100) / 100 * 2.3 - 1.15,
+    ));
+    const floatingGeometry = new THREE.BufferGeometry();
+    floatingGeometry.setAttribute("position", new THREE.BufferAttribute(floatingPositions, 3));
+    const floatingMaterial = new THREE.PointsMaterial({ color: 0x91b2c0, size: 0.026, sizeAttenuation: true, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false });
+    const floatingParticles = new THREE.Points(floatingGeometry, floatingMaterial);
+    floatingParticles.renderOrder = 4;
+    root.add(floatingParticles);
+
     const hotspotNodes: Array<{ id: SandboxHotspotId; group: THREE.Group; material: THREE.MeshStandardMaterial }> = [];
     const createHotspot = (id: SandboxHotspotId, position: [number, number, number]) => {
       const group = new THREE.Group();
@@ -202,6 +219,8 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
       renderer.setSize(width, height, false);
       streamMaterial.size = mode === "efficient" ? 0.068 : 0.092;
       streamMaterial.opacity = mode === "efficient" ? 0.72 : 0.96;
+      floatingMaterial.size = mode === "efficient" ? 0.019 : 0.026;
+      floatingMaterial.opacity = mode === "efficient" ? 0.32 : 0.5;
     };
     const resize = () => {
       const bounds = host.getBoundingClientRect();
@@ -230,6 +249,7 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
     let lastPerformanceMode = performanceRef.current;
     const sequenceStartedAt = performance.now();
     let actionTone = 0;
+    let entryBoost = 0;
 
     const pointOnStream = (path: THREE.Vector3[], position: number) => {
       const scaled = position * (path.length - 1);
@@ -255,6 +275,25 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
         streamPositions[index * 3 + 2] = point.z;
       }
       streamGeometry.attributes.position.needsUpdate = true;
+    };
+
+    const updateFloatingParticles = (time: number, mode: ScenePerformanceMode, frozen: boolean, pointer: { x: number; y: number }) => {
+      const count = mode === "efficient" ? 24 : maxFloatingParticles;
+      floatingGeometry.setDrawRange(0, count);
+      for (let index = 0; index < count; index += 1) {
+        const anchor = floatingAnchors[index];
+        const cursorX = pointer.x * 2.1;
+        const cursorY = -pointer.y * 1.35;
+        const distance = Math.hypot(anchor.x - cursorX, anchor.y - cursorY);
+        const reaction = frozen ? 0 : Math.max(0, 1 - distance / 1.32);
+        const angle = Math.atan2(anchor.y - cursorY, anchor.x - cursorX);
+        const driftX = frozen ? 0 : Math.sin(time * 0.00055 + index * 0.73) * 0.035;
+        const driftY = frozen ? 0 : Math.cos(time * 0.00043 + index * 0.51) * 0.029;
+        floatingPositions[index * 3] = anchor.x + driftX + Math.cos(angle) * reaction * 0.18;
+        floatingPositions[index * 3 + 1] = anchor.y + driftY + Math.sin(angle) * reaction * 0.14;
+        floatingPositions[index * 3 + 2] = anchor.z + reaction * 0.12;
+      }
+      floatingGeometry.attributes.position.needsUpdate = true;
     };
 
     const onPointerDown = (event: PointerEvent) => {
@@ -335,6 +374,10 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
       rim.color.copy(baseRimColor).lerp(activeRimColor, actionTone);
       streamMaterial.color.copy(baseStreamColor).lerp(activeStreamColor, actionTone);
       const runIntensity = progressRef.current;
+      const targetEntryBoost = enteringRef.current ? 1 : 0;
+      entryBoost += (targetEntryBoost - entryBoost) * 0.17;
+      camera.position.z += ((entryDistance - entryBoost * 5.6) - camera.position.z) * 0.14;
+      root.scale.setScalar(1 + entryBoost * 0.12);
       lights.children.forEach((node, index) => { node.scale.setScalar(0.72 + runIntensity * 0.36 + (reduceMotion ? 0 : Math.sin(time * 0.0022 + index) * 0.1)); });
       hotspotNodes.forEach((hotspot, index) => {
         const selected = hotspot.id === activeHotspotRef.current;
@@ -342,6 +385,7 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
         hotspot.group.scale.setScalar(selected ? 1.25 : 0.9 + (reduceMotion ? 0 : Math.sin(time * 0.002 + index) * 0.06));
       });
       updateStreams(time, lastPerformanceMode, reduceMotion, runIntensity, stageRef.current);
+      updateFloatingParticles(time, lastPerformanceMode, reduceMotion, pointer);
       renderer.render(scene, camera);
       if (firstFrame) {
         firstFrame = false;

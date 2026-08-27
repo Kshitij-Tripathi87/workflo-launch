@@ -37,3 +37,6 @@
 - [x] Add restrained pointer parallax for the hero headline and essential actions.
 - [x] Shift the scene lighting smoothly while either hero action is hovered.
 - [x] Validate the pointer-responsive hero and save a delivery checkpoint.
+- [x] Add a rapid WebGL sandbox-entry transition before QA Console navigation.
+- [x] Add cursor-reactive floating data particles to the WebGL sandbox.
+- [x] Validate the entry transition and particle response, then save a delivery checkpoint.
