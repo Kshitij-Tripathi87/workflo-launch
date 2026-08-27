@@ -16,9 +16,13 @@ describe("Workflo hero messaging", () => {
     expect(homeSource).toContain("minimal-hero__loader-orbit");
     expect(homeSource).toContain("workflo-sandbox-immersive-hero_b63d7110.jpg");
     expect(homeSource).not.toContain("<SandboxScene");
+    expect(homeSource).toContain("/api/trial-signups");
+    expect(homeSource).toContain("<Dialog open={trialOpen}");
     expect(styles).toContain("workflo-sandbox-immersive-hero_b63d7110.jpg");
     expect(styles).toContain(".minimal-hero__content.is-ready > h1");
     expect(styles).toContain(".motion-reduced .minimal-hero__content > *");
     expect(styles).toContain("@keyframes workflo-loader-orbit");
+    expect(styles).toContain("@media (hover: hover) and (pointer: fine)");
+    expect(styles).toContain("@media (min-width: 761px) and (max-width: 1100px)");
   });
 });

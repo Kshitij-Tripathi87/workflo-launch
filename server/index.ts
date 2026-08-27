@@ -2,6 +2,7 @@ import express from "express";
 import { createServer } from "http";
 import path from "path";
 import { fileURLToPath } from "url";
+import { TrialSignupInputError, createTrialSignup } from "./trialSignups";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,6 +10,21 @@ const __dirname = path.dirname(__filename);
 async function startServer() {
   const app = express();
   const server = createServer(app);
+  app.use(express.json({ limit: "8kb" }));
+
+  app.post("/api/trial-signups", async (req, res) => {
+    try {
+      await createTrialSignup(req.body?.email);
+      res.status(201).json({ ok: true, message: "Your trial request has been recorded." });
+    } catch (error) {
+      if (error instanceof TrialSignupInputError) {
+        res.status(400).json({ ok: false, message: error.message });
+        return;
+      }
+      console.error("[trial-signup] Unable to record trial request", error);
+      res.status(503).json({ ok: false, message: "Trial requests are temporarily unavailable. Please try again." });
+    }
+  });
 
   // Serve static files from dist/public in production
   const staticPath =

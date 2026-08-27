@@ -93,3 +93,8 @@
 - [x] Remove the translucent WebGL overlay so only the box background image remains visible.
 - [x] Tune the hero image parallax for smooth touch scrolling and reduced-motion safety.
 - [x] Validate the image-only hero on desktop and mobile and save a delivery checkpoint.
+- [x] Review the existing dialog, server, and database foundations for trial email capture.
+- [x] Add an accessible Start Free Trial modal with email validation and persistent submission handling.
+- [x] Add a deduplicated database record for trial sign-up emails and verify the backend procedure.
+- [x] Refine the hero image crop for tablet breakpoints and add restrained desktop hover feedback.
+- [x] Validate the trial form, image behavior, and responsive layout, then save a delivery checkpoint.

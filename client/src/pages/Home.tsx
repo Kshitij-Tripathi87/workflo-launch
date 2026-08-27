@@ -2,21 +2,23 @@
  * Minimal Workflo hero — a single immersive runtime surface with only the product thesis
  * and the two essential routes. The interactive sandbox fills the complete viewport.
  */
-import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type PointerEvent } from "react";
 import { ArrowUpRight } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { WORKFLO_HERO } from "@/lib/workfloHero";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function Home() {
   const headlineTagline = WORKFLO_HERO.tagline;
   const [heroImageLoaded, setHeroImageLoaded] = useState(false);
   const [taglineLength, setTaglineLength] = useState(0);
   const [taglineComplete, setTaglineComplete] = useState(false);
-  const [actionHovered, setActionHovered] = useState(false);
-  const [isEnteringConsole, setIsEnteringConsole] = useState(false);
+  const [trialOpen, setTrialOpen] = useState(false);
+  const [trialEmail, setTrialEmail] = useState("");
+  const [trialState, setTrialState] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [trialMessage, setTrialMessage] = useState("");
   const pointerPosition = useRef({ x: 0, y: 0 });
   const heroRef = useRef<HTMLElement>(null);
-  const [, setLocation] = useLocation();
   const [reducedMotion, setReducedMotion] = useState(() => {
     try { const stored = window.localStorage.getItem("workflo-reduced-motion"); return stored === "true" || (stored === null && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch { return false; }
   });
@@ -73,13 +75,31 @@ export default function Home() {
     return () => { window.cancelAnimationFrame(frame); window.clearTimeout(releaseTimer); window.removeEventListener("scroll", onScroll); hero.removeEventListener("wheel", onWheel); };
   }, [reducedMotion]);
 
-  const enterConsole = (event: MouseEvent<HTMLAnchorElement>) => {
+  const submitTrial = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (isEnteringConsole) return;
-    if (reducedMotion) { setLocation("/dashboard"); return; }
-    setActionHovered(true);
-    setIsEnteringConsole(true);
-    window.setTimeout(() => setLocation("/dashboard"), 440);
+    if (trialState === "submitting") return;
+    setTrialState("submitting");
+    setTrialMessage("");
+    try {
+      const response = await fetch("/api/trial-signups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trialEmail }),
+      });
+      const payload = await response.json().catch(() => ({})) as { ok?: boolean; message?: string };
+      if (!response.ok || !payload.ok) throw new Error(payload.message || "Trial requests are temporarily unavailable. Please try again.");
+      setTrialState("success");
+      setTrialMessage("Request recorded. We’ll be in touch about your trial.");
+      setTrialEmail("");
+    } catch (error) {
+      setTrialState("error");
+      setTrialMessage(error instanceof Error ? error.message : "Trial requests are temporarily unavailable. Please try again.");
+    }
+  };
+
+  const changeTrialDialog = (open: boolean) => {
+    setTrialOpen(open);
+    if (!open) { setTrialState("idle"); setTrialMessage(""); }
   };
 
   useEffect(() => {
@@ -98,7 +118,7 @@ export default function Home() {
 
   useEffect(() => { try { window.localStorage.setItem("workflo-reduced-motion", String(reducedMotion)); } catch { /* Preference persistence is optional. */ } }, [reducedMotion]);
 
-  return <main ref={heroRef} className={`minimal-hero ${isEnteringConsole ? "is-entering" : ""} ${reducedMotion ? "motion-reduced" : ""}`} onPointerMove={updatePointer} onPointerLeave={resetPointer}>
+  return <main ref={heroRef} className={`minimal-hero ${reducedMotion ? "motion-reduced" : ""}`} onPointerMove={updatePointer} onPointerLeave={resetPointer}>
     <div className="minimal-hero__sandbox-art" aria-hidden="true"><img src="/manus-storage/workflo-sandbox-immersive-hero_b63d7110.jpg" alt="" onLoad={() => setHeroImageLoaded(true)} /></div>
     <div className="minimal-hero__scrim" aria-hidden="true" />
     <Link href="/" className={`minimal-hero__brand ${heroImageLoaded ? "is-ready" : ""}`} aria-label="Workflo home"><span>W/</span><strong>WORKFLO</strong><small>AUTONOMOUS QA</small></Link>
@@ -107,7 +127,17 @@ export default function Home() {
     <div className={`minimal-hero__content ${heroImageLoaded ? "is-ready" : ""}`}>
       <h1><span className={`typewriter-tagline ${taglineComplete ? "is-complete" : ""}`} aria-label={headlineTagline}><span aria-hidden="true">{headlineTagline.slice(0, taglineLength)}</span><b aria-hidden="true" /></span></h1>
       <p>{WORKFLO_HERO.description}</p>
-      <div className="minimal-hero__actions"><Link className="minimal-hero__primary-action" href="/dashboard" onClick={enterConsole} onPointerEnter={() => setActionHovered(true)} onPointerLeave={() => setActionHovered(false)}>Start Free Trial <ArrowUpRight size={17} /></Link><Link href="/docs" onPointerEnter={() => setActionHovered(true)} onPointerLeave={() => setActionHovered(false)}>Documentation <ArrowUpRight size={17} /></Link></div>
+      <div className="minimal-hero__actions"><button className="minimal-hero__primary-action" type="button" onClick={() => setTrialOpen(true)}>Start Free Trial <ArrowUpRight size={17} /></button><Link href="/docs">Documentation <ArrowUpRight size={17} /></Link></div>
     </div>
+    <Dialog open={trialOpen} onOpenChange={changeTrialDialog}>
+      <DialogContent className="trial-modal">
+        <DialogHeader>
+          <span className="trial-modal__eyebrow">WORKFLO / TRIAL ACCESS</span>
+          <DialogTitle>Start your free trial.</DialogTitle>
+          <DialogDescription>Use a work email to request access to Workflo’s isolated QA environment.</DialogDescription>
+        </DialogHeader>
+        {trialState === "success" ? <div className="trial-modal__success" role="status"><strong>Request received.</strong><p>{trialMessage}</p><button type="button" onClick={() => changeTrialDialog(false)}>Close</button></div> : <form className="trial-modal__form" onSubmit={submitTrial}><label><span>WORK EMAIL</span><input type="email" name="email" autoComplete="email" placeholder="you@company.com" value={trialEmail} onChange={(event) => setTrialEmail(event.target.value)} required disabled={trialState === "submitting"} /></label>{trialState === "error" && <p className="trial-modal__error" role="alert">{trialMessage}</p>}<button type="submit" disabled={trialState === "submitting"}>{trialState === "submitting" ? "Submitting…" : "Request access"}<ArrowUpRight size={16} /></button><small>Your email is used only to process this trial request.</small></form>}
+      </DialogContent>
+    </Dialog>
   </main>;
 }

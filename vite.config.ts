@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
+import { TrialSignupInputError, createTrialSignup } from "./server/trialSignups";
 
 // =============================================================================
 // Manus Debug Collector - Vite Plugin
@@ -150,6 +151,35 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
+function vitePluginTrialSignup(): Plugin {
+  return {
+    name: "workflo-trial-signup",
+    configureServer(server) {
+      server.middlewares.use("/api/trial-signups", (req, res, next) => {
+        if (req.method !== "POST") return next();
+        let rawBody = "";
+        req.on("data", (chunk: Buffer) => {
+          rawBody += chunk.toString();
+          if (rawBody.length > 8_192) req.destroy();
+        });
+        req.on("end", async () => {
+          try {
+            const payload = JSON.parse(rawBody) as { email?: unknown };
+            await createTrialSignup(payload.email);
+            res.statusCode = 201;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ ok: true, message: "Your trial request has been recorded." }));
+          } catch (error) {
+            res.statusCode = error instanceof TrialSignupInputError ? 400 : 503;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ ok: false, message: error instanceof TrialSignupInputError ? error.message : "Trial requests are temporarily unavailable. Please try again." }));
+          }
+        });
+      });
+    },
+  };
+}
+
 function vitePluginStorageProxy(): Plugin {
   return {
     name: "manus-storage-proxy",
@@ -203,7 +233,7 @@ function vitePluginStorageProxy(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector(), vitePluginStorageProxy()];
+const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector(), vitePluginTrialSignup(), vitePluginStorageProxy()];
 
 export default defineConfig({
   plugins,
