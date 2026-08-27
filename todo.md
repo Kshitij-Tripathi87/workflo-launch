@@ -17,3 +17,7 @@
 - [x] Add a user-controlled WebGL performance mode with adaptive scene quality.
 - [x] Add restrained steel-blue data-stream particles that communicate active QA execution.
 - [x] Verify high- and low-performance scene states and save a delivery checkpoint.
+- [x] Persist the WebGL performance preference in browser local storage.
+- [x] Synchronize particle-stream intensity and speed with execution stages.
+- [x] Add clickable WebGL hotspots with detailed sandbox-control and receipt-artifact panels.
+- [x] Validate the persistent interactive scene and save a delivery checkpoint.

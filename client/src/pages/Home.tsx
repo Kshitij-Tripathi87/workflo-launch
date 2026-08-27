@@ -4,8 +4,8 @@
  */
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link } from "wouter";
-import { ArrowDownRight, ArrowUpRight, Bot, Check, ChevronRight, FileCheck2, LockKeyhole, Play, ScanSearch, ShieldCheck, Terminal } from "lucide-react";
-import SandboxScene, { type ScenePerformanceMode } from "@/components/SandboxScene";
+import { ArrowDownRight, ArrowUpRight, Bot, Check, ChevronRight, FileCheck2, LockKeyhole, Play, ScanSearch, ShieldCheck, Terminal, X } from "lucide-react";
+import SandboxScene, { type SandboxHotspotId, type ScenePerformanceMode } from "@/components/SandboxScene";
 
 const receiptImage = "/manus-storage/workflo-receipt-proof_041eec88.jpg";
 const runStages = [
@@ -15,6 +15,11 @@ const runStages = [
   { label: "Receipt available", detail: "Execution record verified", trace: "attestation complete", progress: 100, step: 2, readout: "T+00:08.28" },
 ];
 const receiptRows = [["01", "isolated browser initialized", "00:02.384", "pass"], ["02", "checkout flow traversed", "00:04.117", "pass"], ["03", "payment error state observed", "00:01.691", "pass"], ["04", "receipt signed by sandbox", "00:00.090", "verified"]];
+const hotspotDetails: Record<SandboxHotspotId, { code: string; title: string; body: string; field: string; value: string }> = {
+  runtime: { code: "SANDBOX CONTROL / 01", title: "Ephemeral runtime", body: "Each test begins from a clean, isolated execution context and ends with the environment retired.", field: "RETENTION", value: "Session-scoped" },
+  network: { code: "SANDBOX CONTROL / 02", title: "Network boundary", body: "The test environment has a defined network perimeter so execution can be reviewed without production access.", field: "ACCESS", value: "Policy-bound" },
+  receipt: { code: "RECEIPT ARTIFACT / 03", title: "Execution receipt", body: "Workflo packages the observed event sequence, timestamps, and final result into a durable verification record.", field: "ATTESTATION", value: "Run-linked" },
+};
 
 function SignalDot({ label = "Verified" }: { label?: string }) { return <span className="signal-label"><span className="signal-dot" />{label}</span>; }
 function SectionIndex({ index, label }: { index: string; label: string }) { return <div className="section-index"><span>{index}</span><i /> <span>{label}</span></div>; }
@@ -23,7 +28,10 @@ export default function Home() {
   const [runStage, setRunStage] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [resetSignal, setResetSignal] = useState(0);
-  const [performanceMode, setPerformanceMode] = useState<ScenePerformanceMode>("balanced");
+  const [performanceMode, setPerformanceMode] = useState<ScenePerformanceMode>(() => {
+    try { const stored = window.localStorage.getItem("workflo-scene-performance"); return stored === "efficient" || stored === "balanced" ? stored : "balanced"; } catch { return "balanced"; }
+  });
+  const [activeHotspot, setActiveHotspot] = useState<SandboxHotspotId | null>(null);
   const heroRef = useRef<HTMLElement>(null);
   const activeRun = runStages[runStage];
 
@@ -46,6 +54,8 @@ export default function Home() {
     return () => { window.removeEventListener("scroll", updateDepth); window.removeEventListener("resize", updateDepth); };
   }, []);
 
+  useEffect(() => { try { window.localStorage.setItem("workflo-scene-performance", performanceMode); } catch { /* Storage may be unavailable in private contexts. */ } }, [performanceMode]);
+
   const heroStyle = {
     "--box-scale": `${1 + scrollProgress * 0.1}`,
     "--box-shift-y": `${scrollProgress * 3}%`,
@@ -67,13 +77,15 @@ export default function Home() {
             <div className="hero-assurance" aria-label="Privacy and security controls"><div><ShieldCheck size={15} /><span>PRIVACY-FIRST EXECUTION</span><strong>Ephemeral environments keep each run contained.</strong></div><div><LockKeyhole size={15} /><span>CONTROLLED ACCESS</span><strong>No production credentials are required for execution.</strong></div><div><FileCheck2 size={15} /><span>COMPLIANCE EVIDENCE</span><strong>Receipts provide a durable record for review.</strong></div></div>
           </div>
           <div className="hero-visual hero-visual--webgl reveal-up reveal-delay-1" style={heroStyle}>
-            <SandboxScene scrollProgress={scrollProgress} resetSignal={resetSignal} performanceMode={performanceMode} />
+            <SandboxScene scrollProgress={scrollProgress} resetSignal={resetSignal} performanceMode={performanceMode} runProgress={activeRun.progress / 100} executionStage={runStage} activeHotspot={activeHotspot} onHotspotSelect={setActiveHotspot} />
             <div className="hero-visual-shade" />
             <div className="floating-label floating-label--top">EXECUTION / WF-4492</div>
             <div className="hero-live-panel" aria-live="polite"><div><span className="live-panel-label">CURRENT STATE</span><strong>{activeRun.label}</strong><small>{activeRun.detail}</small></div><SignalDot /><span className="live-run-id">{activeRun.readout} / {activeRun.progress}%</span><div className="live-meter"><i style={{ transform: `scaleX(${activeRun.progress / 100})` }} /></div></div>
             <div className="hero-entry-copy" style={{ opacity: entryOpacity, transform: `translate(-50%, calc(-50% + ${(1 - entryOpacity) * 28}px))` }}><span>ISOLATED RUNTIME / ACTIVE</span><strong>The test stays contained.</strong><p>Scroll through the environment to examine the controls Workflo uses to keep autonomous execution private and inspectable.</p></div>
             <div className="floating-label floating-label--bottom"><SignalDot /> <span>{activeRun.trace}</span></div>
             <div className="scene-metadata" aria-hidden="true"><span>ENCLOSURE / 03</span><span>RUNTIME / EPHEMERAL</span><span>STREAM / ACTIVE</span><span>MODE / INSPECT</span></div>
+            <div className="scene-hotspot-hint"><strong>03</strong><span>Inspectable controls</span></div>
+            {activeHotspot && <aside className="scene-detail-panel" aria-live="polite"><button type="button" onClick={() => setActiveHotspot(null)} aria-label="Close sandbox detail"><X size={14} /></button><span>{hotspotDetails[activeHotspot].code}</span><h3>{hotspotDetails[activeHotspot].title}</h3><p>{hotspotDetails[activeHotspot].body}</p><div><small>{hotspotDetails[activeHotspot].field}</small><strong>{hotspotDetails[activeHotspot].value}</strong></div></aside>}
             <div className="scene-controls"><span>DRAG TO INSPECT</span><button className="scene-performance-toggle" type="button" aria-pressed={performanceMode === "efficient"} onClick={() => setPerformanceMode((mode) => mode === "balanced" ? "efficient" : "balanced")}>{performanceMode === "balanced" ? "Performance: balanced" : "Performance: efficient"}</button><button type="button" onClick={() => setResetSignal((current) => current + 1)}>Reset view</button></div>
             <div className="hero-corner hero-corner--a" /><div className="hero-corner hero-corner--b" />
           </div>

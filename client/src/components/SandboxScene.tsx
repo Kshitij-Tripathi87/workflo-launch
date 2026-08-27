@@ -9,20 +9,33 @@ type SandboxSceneProps = {
   scrollProgress: number;
   resetSignal: number;
   performanceMode: ScenePerformanceMode;
+  runProgress: number;
+  executionStage: number;
+  activeHotspot: SandboxHotspotId | null;
+  onHotspotSelect: (hotspot: SandboxHotspotId) => void;
 };
 
 export type ScenePerformanceMode = "balanced" | "efficient";
+export type SandboxHotspotId = "runtime" | "network" | "receipt";
 
-export default function SandboxScene({ scrollProgress, resetSignal, performanceMode }: SandboxSceneProps) {
+export default function SandboxScene({ scrollProgress, resetSignal, performanceMode, runProgress, executionStage, activeHotspot, onHotspotSelect }: SandboxSceneProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef(scrollProgress);
   const resetRef = useRef(resetSignal);
   const performanceRef = useRef<ScenePerformanceMode>(performanceMode);
+  const progressRef = useRef(runProgress);
+  const stageRef = useRef(executionStage);
+  const activeHotspotRef = useRef<SandboxHotspotId | null>(activeHotspot);
+  const onHotspotSelectRef = useRef(onHotspotSelect);
   const [unavailable, setUnavailable] = useState(false);
 
   scrollRef.current = scrollProgress;
   resetRef.current = resetSignal;
   performanceRef.current = performanceMode;
+  progressRef.current = runProgress;
+  stageRef.current = executionStage;
+  activeHotspotRef.current = activeHotspot;
+  onHotspotSelectRef.current = onHotspotSelect;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -123,6 +136,25 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
     streamParticles.renderOrder = 5;
     root.add(streamParticles);
 
+    const hotspotNodes: Array<{ id: SandboxHotspotId; group: THREE.Group; material: THREE.MeshStandardMaterial }> = [];
+    const createHotspot = (id: SandboxHotspotId, position: [number, number, number]) => {
+      const group = new THREE.Group();
+      group.position.set(...position);
+      const markerMaterial = new THREE.MeshStandardMaterial({ color: 0xd7e6ec, emissive: 0x3d7186, emissiveIntensity: 1.25, metalness: 0.25, roughness: 0.28 });
+      const marker = new THREE.Mesh(new THREE.SphereGeometry(0.072, 16, 16), markerMaterial);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.128, 0.008, 8, 26), new THREE.MeshBasicMaterial({ color: 0x9ab7c4, transparent: true, opacity: 0.76 }));
+      ring.rotation.x = Math.PI / 2;
+      const stem = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0.06, 0), new THREE.Vector3(0, 0.29, 0)]), new THREE.LineBasicMaterial({ color: 0x94b1bd, transparent: true, opacity: 0.68 }));
+      [marker, ring, stem].forEach((object) => { object.userData.hotspot = id; group.add(object); });
+      group.userData.hotspot = id;
+      group.renderOrder = 6;
+      root.add(group);
+      hotspotNodes.push({ id, group, material: markerMaterial });
+    };
+    createHotspot("runtime", [-0.55, -0.46, 0.34]);
+    createHotspot("network", [1.1, -0.61, 0.28]);
+    createHotspot("receipt", [0.46, 0.66, 0.18]);
+
     const lights = new THREE.Group();
     [[-0.95, -0.7, 0.58], [0.46, -0.7, 0.18], [1.14, -0.7, 0.33], [-0.61, -0.7, -0.53]].forEach(([x, y, z]) => {
       const node = new THREE.Mesh(new THREE.SphereGeometry(0.052, 16, 16), signal);
@@ -180,14 +212,19 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
       return path[start].clone().lerp(path[start + 1], scaled - start);
     };
 
-    const updateStreams = (time: number, mode: ScenePerformanceMode, frozen: boolean) => {
-      const count = mode === "efficient" ? 16 : maxParticles;
+    const updateStreams = (time: number, mode: ScenePerformanceMode, frozen: boolean, progress: number, stage: number) => {
+      const maximum = mode === "efficient" ? 16 : maxParticles;
+      const count = Math.max(mode === "efficient" ? 4 : 8, Math.round(maximum * (0.16 + progress * 0.84)));
       streamGeometry.setDrawRange(0, count);
+      streamParticles.visible = progress > 0.03;
+      streamMaterial.opacity = (mode === "efficient" ? 0.72 : 0.96) * (0.35 + progress * 0.65);
+      const activePathCount = Math.min(streamPaths.length, Math.max(1, stage + 1));
+      const speed = frozen ? 0 : 0.000035 + progress * 0.00018;
       for (let index = 0; index < count; index += 1) {
-        const path = streamPaths[index % streamPaths.length];
-        const offset = ((index / count) + (frozen ? 0.28 : time * 0.00013) + (index % 3) * 0.13) % 1;
+        const path = streamPaths[index % activePathCount];
+        const offset = ((index / count) + (frozen ? 0.28 : time * speed) + (index % activePathCount) * 0.13) % 1;
         const point = pointOnStream(path, offset);
-        const ripple = frozen ? 0 : Math.sin(time * 0.004 + index) * 0.024;
+        const ripple = frozen ? 0 : Math.sin(time * (0.002 + progress * 0.003) + index) * (0.009 + progress * 0.026);
         streamPositions[index * 3] = point.x;
         streamPositions[index * 3 + 1] = point.y + ripple;
         streamPositions[index * 3 + 2] = point.z;
@@ -204,15 +241,31 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
       renderer.domElement.setPointerCapture(event.pointerId);
       renderer.domElement.style.cursor = "grabbing";
     };
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    const getHotspotAtPointer = (event: PointerEvent) => {
+      const bounds = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+      pointer.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      const hit = raycaster.intersectObjects(hotspotNodes.map((hotspot) => hotspot.group), true).find((candidate) => candidate.object.userData.hotspot) ?? null;
+      return hit?.object.userData.hotspot as SandboxHotspotId | undefined;
+    };
     const onPointerMove = (event: PointerEvent) => {
-      if (!dragging) return;
+      if (!dragging) {
+        renderer.domElement.style.cursor = getHotspotAtPointer(event) ? "pointer" : "grab";
+        return;
+      }
       targetY = baseY + (event.clientX - startX) * 0.008;
       targetX = THREE.MathUtils.clamp(baseX + (event.clientY - startY) * 0.006, -0.65, 0.33);
     };
     const onPointerUp = (event: PointerEvent) => {
+      const moved = Math.hypot(event.clientX - startX, event.clientY - startY);
       dragging = false;
       renderer.domElement.releasePointerCapture(event.pointerId);
-      renderer.domElement.style.cursor = "grab";
+      const hotspot = moved < 8 ? getHotspotAtPointer(event) : undefined;
+      if (hotspot) onHotspotSelectRef.current(hotspot);
+      renderer.domElement.style.cursor = hotspot ? "pointer" : "grab";
     };
     renderer.domElement.style.cursor = "grab";
     renderer.domElement.setAttribute("aria-label", "Interactive isolated sandbox model. Drag to rotate.");
@@ -238,8 +291,14 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
       const depth = scrollRef.current;
       camera.position.z += ((8.6 - depth * 1.4) - camera.position.z) * 0.06;
       camera.position.y += ((0.15 + depth * 0.18) - camera.position.y) * 0.06;
-      lights.children.forEach((node, index) => { node.scale.setScalar(0.85 + Math.sin(time * 0.0022 + index) * 0.12); });
-      updateStreams(time, lastPerformanceMode, reduceMotion);
+      const runIntensity = progressRef.current;
+      lights.children.forEach((node, index) => { node.scale.setScalar(0.72 + runIntensity * 0.36 + (reduceMotion ? 0 : Math.sin(time * 0.0022 + index) * 0.1)); });
+      hotspotNodes.forEach((hotspot, index) => {
+        const selected = hotspot.id === activeHotspotRef.current;
+        hotspot.material.emissiveIntensity = selected ? 3.2 : 1.05 + runIntensity * 0.72;
+        hotspot.group.scale.setScalar(selected ? 1.25 : 0.9 + (reduceMotion ? 0 : Math.sin(time * 0.002 + index) * 0.06));
+      });
+      updateStreams(time, lastPerformanceMode, reduceMotion, runIntensity, stageRef.current);
       renderer.render(scene, camera);
       animationFrame = window.requestAnimationFrame(draw);
     };
