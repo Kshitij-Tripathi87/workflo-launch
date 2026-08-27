@@ -40,3 +40,7 @@
 - [x] Add a rapid WebGL sandbox-entry transition before QA Console navigation.
 - [x] Add cursor-reactive floating data particles to the WebGL sandbox.
 - [x] Validate the entry transition and particle response, then save a delivery checkpoint.
+- [x] Expand the documentation into a clear end-to-end Workflo QA reference.
+- [x] Add richer technical explanations for isolation, execution lifecycle, receipts, and CI integration.
+- [x] Add visual protocol and receipt diagrams to improve comprehension.
+- [x] Validate the upgraded documentation across desktop and mobile, then save a delivery checkpoint.
