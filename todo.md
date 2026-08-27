@@ -29,3 +29,7 @@
 - [x] Replace the framed sandbox panel with a full-viewport interactive background scene.
 - [x] Reduce the landing page to a heading, sub-headline, and QA Console and Documentation actions.
 - [x] Remove all nonessential landing-page sections and validate the minimal composition.
+- [x] Add a sleek WebGL loading state with visible progress before the scene is ready.
+- [x] Add a staggered first-load fade-in for the hero heading, sub-headline, and essential actions.
+- [x] Add restrained premium hover feedback to the QA Console and Documentation actions.
+- [x] Validate the loading and motion experience, then save a delivery checkpoint.

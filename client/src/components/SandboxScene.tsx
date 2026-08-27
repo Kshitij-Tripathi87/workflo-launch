@@ -14,12 +14,14 @@ type SandboxSceneProps = {
   activeHotspot: SandboxHotspotId | null;
   onHotspotSelect: (hotspot: SandboxHotspotId) => void;
   showHotspots?: boolean;
+  onSceneProgress?: (progress: number) => void;
+  onSceneReady?: () => void;
 };
 
 export type ScenePerformanceMode = "balanced" | "efficient";
 export type SandboxHotspotId = "runtime" | "network" | "receipt";
 
-export default function SandboxScene({ scrollProgress, resetSignal, performanceMode, runProgress, executionStage, activeHotspot, onHotspotSelect, showHotspots = true }: SandboxSceneProps) {
+export default function SandboxScene({ scrollProgress, resetSignal, performanceMode, runProgress, executionStage, activeHotspot, onHotspotSelect, showHotspots = true, onSceneProgress, onSceneReady }: SandboxSceneProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef(scrollProgress);
   const resetRef = useRef(resetSignal);
@@ -28,6 +30,8 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
   const stageRef = useRef(executionStage);
   const activeHotspotRef = useRef<SandboxHotspotId | null>(activeHotspot);
   const onHotspotSelectRef = useRef(onHotspotSelect);
+  const onSceneProgressRef = useRef(onSceneProgress);
+  const onSceneReadyRef = useRef(onSceneReady);
   const [unavailable, setUnavailable] = useState(false);
 
   scrollRef.current = scrollProgress;
@@ -37,6 +41,8 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
   stageRef.current = executionStage;
   activeHotspotRef.current = activeHotspot;
   onHotspotSelectRef.current = onHotspotSelect;
+  onSceneProgressRef.current = onSceneProgress;
+  onSceneReadyRef.current = onSceneReady;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -57,6 +63,7 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     host.appendChild(renderer.domElement);
+    onSceneProgressRef.current?.(0.28);
 
     const root = new THREE.Group();
     root.rotation.set(-0.16, -0.56, 0);
@@ -197,6 +204,7 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
     const resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(host);
     resize();
+    onSceneProgressRef.current?.(0.72);
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let dragging = false;
@@ -281,6 +289,7 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
     renderer.domElement.addEventListener("pointercancel", onPointerUp);
 
     let animationFrame = 0;
+    let firstFrame = true;
     const draw = (time: number) => {
       if (lastPerformanceMode !== performanceRef.current) {
         lastPerformanceMode = performanceRef.current;
@@ -313,6 +322,11 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
       });
       updateStreams(time, lastPerformanceMode, reduceMotion, runIntensity, stageRef.current);
       renderer.render(scene, camera);
+      if (firstFrame) {
+        firstFrame = false;
+        onSceneProgressRef.current?.(1);
+        onSceneReadyRef.current?.();
+      }
       animationFrame = window.requestAnimationFrame(draw);
     };
     animationFrame = window.requestAnimationFrame(draw);
