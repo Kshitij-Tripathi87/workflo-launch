@@ -17,6 +17,9 @@ describe("Workflo hero messaging", () => {
     expect(homeSource).toContain("workflo-sandbox-immersive-hero_b63d7110.jpg");
     expect(homeSource).toContain("workflo-sandbox-hero-motion_36908eda.mp4");
     expect(homeSource).toContain("minimal-hero__sandbox-video");
+    expect(homeSource).toContain("beginLoopCrossfade");
+    expect(homeSource).toContain("toggleHeroVideo");
+    expect(homeSource).toContain("VIDEO: PAUSE");
     expect(homeSource).not.toContain("<SandboxScene");
     expect(homeSource).toContain("/api/trial-signups");
     expect(homeSource).toContain("<Dialog open={trialOpen}");
@@ -24,6 +27,8 @@ describe("Workflo hero messaging", () => {
     expect(homeSource).toContain("Please confirm consent before requesting a trial.");
     expect(styles).toContain("workflo-sandbox-immersive-hero_b63d7110.jpg");
     expect(styles).toContain(".minimal-hero__sandbox-art.is-video-ready .minimal-hero__sandbox-video");
+    expect(styles).toContain(".minimal-hero__sandbox-art.is-loop-fading .minimal-hero__sandbox-video");
+    expect(styles).toContain(".minimal-hero__video-control");
     expect(styles).toContain(".minimal-hero__content.is-ready > h1");
     expect(styles).toContain(".motion-reduced .minimal-hero__content > *");
     expect(styles).toContain("@keyframes workflo-loader-orbit");

@@ -113,3 +113,7 @@
 - [x] Add a clear inline consent error when a user attempts to submit without agreeing.
 - [x] Replace static hero rendering with loading-aware motion playback and preserve an accessible fallback.
 - [x] Validate the new hero motion and trial-form feedback, then save a delivery checkpoint.
+- [x] Review the current video playback, poster fallback, and reduced-motion behavior.
+- [x] Add a restrained visual transition at the video loop boundary to avoid a hard replay cut.
+- [x] Add an accessible background-video play/pause control and synchronize it with motion preferences.
+- [x] Validate the loop and playback-control behavior, then save a delivery checkpoint.

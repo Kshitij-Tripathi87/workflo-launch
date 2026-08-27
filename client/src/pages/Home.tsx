@@ -3,7 +3,7 @@
  * and the two essential routes. The interactive sandbox fills the complete viewport.
  */
 import { useEffect, useRef, useState, type FormEvent, type PointerEvent } from "react";
-import { ArrowUpRight, CircleCheckBig } from "lucide-react";
+import { ArrowUpRight, CircleCheckBig, Pause, Play } from "lucide-react";
 import { Link } from "wouter";
 import { WORKFLO_HERO } from "@/lib/workfloHero";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -26,6 +26,9 @@ export default function Home() {
   const heroRef = useRef<HTMLElement>(null);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
   const [heroVideoReady, setHeroVideoReady] = useState(false);
+  const [heroVideoPaused, setHeroVideoPaused] = useState(false);
+  const [heroVideoLooping, setHeroVideoLooping] = useState(false);
+  const videoLoopGate = useRef(false);
   const [reducedMotion, setReducedMotion] = useState(() => {
     try { const stored = window.localStorage.getItem("workflo-reduced-motion"); return stored === "true" || (stored === null && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch { return false; }
   });
@@ -133,15 +136,33 @@ export default function Home() {
   useEffect(() => {
     const video = heroVideoRef.current;
     if (!video) return;
-    if (reducedMotion) { video.pause(); return; }
-    void video.play().catch(() => undefined);
-  }, [reducedMotion, heroVideoReady]);
+    if (reducedMotion || heroVideoPaused) { video.pause(); return; }
+    void video.play().catch(() => setHeroVideoPaused(true));
+  }, [reducedMotion, heroVideoPaused, heroVideoReady]);
+
+  const beginLoopCrossfade = () => {
+    const video = heroVideoRef.current;
+    if (!video || reducedMotion || heroVideoPaused || !video.duration || videoLoopGate.current || video.currentTime < video.duration - 0.38) return;
+    videoLoopGate.current = true;
+    setHeroVideoLooping(true);
+    window.setTimeout(() => setHeroVideoLooping(false), 520);
+    window.setTimeout(() => { videoLoopGate.current = false; }, 760);
+  };
+
+  const toggleHeroVideo = () => {
+    const video = heroVideoRef.current;
+    if (!video || reducedMotion) return;
+    if (heroVideoPaused) { setHeroVideoPaused(false); void video.play().catch(() => setHeroVideoPaused(true)); return; }
+    video.pause();
+    setHeroVideoPaused(true);
+  };
 
   return <main ref={heroRef} className={`minimal-hero ${reducedMotion ? "motion-reduced" : ""}`} onPointerMove={updatePointer} onPointerLeave={resetPointer}>
-    <div className={`minimal-hero__sandbox-art ${heroVideoReady ? "is-video-ready" : ""}`} aria-hidden="true"><img className="minimal-hero__sandbox-poster" src="/manus-storage/workflo-sandbox-immersive-hero_b63d7110.jpg" alt="" onLoad={() => setHeroImageLoaded(true)} /><video ref={heroVideoRef} className="minimal-hero__sandbox-video" autoPlay muted loop playsInline preload="metadata" poster="/manus-storage/workflo-sandbox-immersive-hero_b63d7110.jpg" onCanPlay={() => setHeroVideoReady(true)}><source src="/manus-storage/workflo-sandbox-hero-motion_36908eda.mp4" type="video/mp4" /></video></div>
+    <div className={`minimal-hero__sandbox-art ${heroVideoReady ? "is-video-ready" : ""} ${heroVideoLooping ? "is-loop-fading" : ""}`} aria-hidden="true"><img className="minimal-hero__sandbox-poster" src="/manus-storage/workflo-sandbox-immersive-hero_b63d7110.jpg" alt="" onLoad={() => setHeroImageLoaded(true)} /><video ref={heroVideoRef} className="minimal-hero__sandbox-video" autoPlay muted loop playsInline preload="metadata" poster="/manus-storage/workflo-sandbox-immersive-hero_b63d7110.jpg" onCanPlay={() => setHeroVideoReady(true)} onTimeUpdate={beginLoopCrossfade} onPause={() => { if (!reducedMotion) setHeroVideoPaused(true); }} onPlay={() => setHeroVideoPaused(false)}><source src="/manus-storage/workflo-sandbox-hero-motion_36908eda.mp4" type="video/mp4" /></video></div>
     <div className="minimal-hero__scrim" aria-hidden="true" />
     <Link href="/" className={`minimal-hero__brand ${heroImageLoaded ? "is-ready" : ""}`} aria-label="Workflo home"><span>W/</span><strong>WORKFLO</strong><small>AUTONOMOUS QA</small></Link>
     <button className={`minimal-hero__motion-control ${heroImageLoaded ? "is-ready" : ""}`} type="button" aria-pressed={reducedMotion} onClick={() => setReducedMotion((value) => !value)}>{reducedMotion ? "MOTION: OFF" : "MOTION: ON"}</button>
+    <button className={`minimal-hero__video-control ${heroImageLoaded ? "is-ready" : ""}`} type="button" aria-pressed={heroVideoPaused} aria-label={heroVideoPaused ? "Play background video" : "Pause background video"} disabled={reducedMotion} onClick={toggleHeroVideo}>{heroVideoPaused || reducedMotion ? <Play size={13} /> : <Pause size={13} />}<span>{heroVideoPaused || reducedMotion ? "VIDEO: PLAY" : "VIDEO: PAUSE"}</span></button>
     <div className={`minimal-hero__loader ${heroImageLoaded ? "is-complete" : ""}`} aria-live="polite" aria-label="Loading Workflo sandbox"><span className="minimal-hero__loader-orbit" aria-hidden="true" /><div><span>LOADING SANDBOX</span><strong>{heroImageLoaded ? "100" : ""}%</strong></div><i><b style={{ transform: `scaleX(${heroImageLoaded ? 1 : 0.28})` }} /></i></div>
     <div className={`minimal-hero__content ${heroImageLoaded ? "is-ready" : ""}`}>
       <h1><span className={`typewriter-tagline ${taglineComplete ? "is-complete" : ""}`} aria-label={headlineTagline}><span aria-hidden="true">{headlineTagline.slice(0, taglineLength)}</span><b aria-hidden="true" /></span></h1>
