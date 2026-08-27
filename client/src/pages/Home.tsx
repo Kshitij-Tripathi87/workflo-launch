@@ -50,6 +50,42 @@ export default function Home() {
     heroRef.current?.style.setProperty("--hero-parallax-y", "0px");
   };
 
+  useEffect(() => {
+    const hero = heroRef.current;
+    if (!hero) return;
+    let frame = 0;
+    let releaseTimer = 0;
+    let targetOffset = 0;
+    let currentOffset = 0;
+
+    const render = () => {
+      currentOffset += (targetOffset - currentOffset) * 0.14;
+      hero.style.setProperty("--hero-scroll-y", `${currentOffset.toFixed(2)}px`);
+      if (Math.abs(targetOffset - currentOffset) > 0.1) frame = window.requestAnimationFrame(render);
+      else frame = 0;
+    };
+    const schedule = () => { if (!frame) frame = window.requestAnimationFrame(render); };
+    const reset = () => { targetOffset = 0; schedule(); };
+    const onScroll = () => {
+      if (reducedMotion) return reset();
+      targetOffset = Math.max(-26, Math.min(0, -window.scrollY * 0.055));
+      schedule();
+    };
+    const onWheel = (event: WheelEvent) => {
+      if (reducedMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return reset();
+      targetOffset = Math.max(-26, Math.min(0, targetOffset - event.deltaY * 0.035));
+      schedule();
+      window.clearTimeout(releaseTimer);
+      releaseTimer = window.setTimeout(reset, 720);
+    };
+
+    hero.style.setProperty("--hero-scroll-y", "0px");
+    window.addEventListener("scroll", onScroll, { passive: true });
+    hero.addEventListener("wheel", onWheel, { passive: true });
+    onScroll();
+    return () => { window.cancelAnimationFrame(frame); window.clearTimeout(releaseTimer); window.removeEventListener("scroll", onScroll); hero.removeEventListener("wheel", onWheel); };
+  }, [reducedMotion]);
+
   const enterConsole = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     if (isEnteringConsole) return;
@@ -81,7 +117,7 @@ export default function Home() {
     <div className="minimal-hero__scrim" aria-hidden="true" />
     <Link href="/" className={`minimal-hero__brand ${sceneReady ? "is-ready" : ""}`} aria-label="Workflo home"><span>W/</span><strong>WORKFLO</strong><small>AUTONOMOUS QA</small></Link>
     <button className={`minimal-hero__motion-control ${sceneReady ? "is-ready" : ""}`} type="button" aria-pressed={reducedMotion} onClick={() => setReducedMotion((value) => !value)}>{reducedMotion ? "MOTION: OFF" : "MOTION: ON"}</button>
-    <div className={`minimal-hero__loader ${sceneReady ? "is-complete" : ""}`} aria-live="polite" aria-label="Loading Workflo sandbox"><div><span>INITIALIZING SANDBOX</span><strong>{Math.round(sceneProgress * 100)}%</strong></div><i><b style={{ transform: `scaleX(${sceneProgress})` }} /></i></div>
+    <div className={`minimal-hero__loader ${sceneReady ? "is-complete" : ""}`} aria-live="polite" aria-label="Loading Workflo sandbox"><span className="minimal-hero__loader-orbit" aria-hidden="true" /><div><span>INITIALIZING SANDBOX</span><strong>{Math.round(sceneProgress * 100)}%</strong></div><i><b style={{ transform: `scaleX(${sceneProgress})` }} /></i></div>
     <div className={`minimal-hero__content ${sceneReady ? "is-ready" : ""}`}>
       <h1><span className={`typewriter-tagline ${taglineComplete ? "is-complete" : ""}`} aria-label={headlineTagline}><span aria-hidden="true">{headlineTagline.slice(0, taglineLength)}</span><b aria-hidden="true" /></span></h1>
       <p>{WORKFLO_HERO.description}</p>

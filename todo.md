@@ -85,3 +85,7 @@
 - [x] Add a high-quality static sandbox fallback for devices without WebGL support.
 - [x] Refine the initial hero text and CTA fade-in while respecting reduced-motion settings.
 - [x] Validate fallback rendering and entry animation, then save a delivery checkpoint.
+- [x] Review the existing hero background motion and loading overlay for opportunities to improve perceived performance.
+- [x] Add a subtle scroll-linked parallax response to the hero background image.
+- [x] Add a lightweight visual loading indicator that remains clear on slow connections.
+- [x] Validate the scrolling and loading states, then save a delivery checkpoint.
