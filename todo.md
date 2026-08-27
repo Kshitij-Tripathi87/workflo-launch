@@ -5,3 +5,4 @@
 - [x] Refine the homepage hierarchy into a more disciplined control-plane composition.
 - [x] Add purposeful live interactions for the sandbox preview, protocol steps, and console data views.
 - [x] Validate the revised routes and create a delivery checkpoint.
+- [x] Remove the intrusive center divider from the landing-page hero and rebalance its composition.
