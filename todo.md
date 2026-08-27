@@ -48,3 +48,6 @@
 - [ ] Add reusable copy-to-clipboard confirmation for all technical examples.
 - [ ] Add a dedicated security and compliance reference with visual isolation and encryption indicators.
 - [x] Validate the expanded documentation interactions and save a delivery checkpoint.
+- [x] Add cURL, Python, and Node.js variants for the API run-status example.
+- [x] Add Cmd/Ctrl+K search focus and highlighted search-result terms.
+- [x] Validate language switching and keyboard search behavior, then save a delivery checkpoint.
