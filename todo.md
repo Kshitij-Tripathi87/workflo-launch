@@ -89,3 +89,7 @@
 - [x] Add a subtle scroll-linked parallax response to the hero background image.
 - [x] Add a lightweight visual loading indicator that remains clear on slow connections.
 - [x] Validate the scrolling and loading states, then save a delivery checkpoint.
+- [x] Review the translucent hero rendering layer and current touch-scroll parallax behavior.
+- [x] Remove the translucent WebGL overlay so only the box background image remains visible.
+- [x] Tune the hero image parallax for smooth touch scrolling and reduced-motion safety.
+- [x] Validate the image-only hero on desktop and mobile and save a delivery checkpoint.

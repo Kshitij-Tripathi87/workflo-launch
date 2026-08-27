@@ -5,13 +5,11 @@
 import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import SandboxScene, { type ScenePerformanceMode } from "@/components/SandboxScene";
 import { WORKFLO_HERO } from "@/lib/workfloHero";
 
 export default function Home() {
   const headlineTagline = WORKFLO_HERO.tagline;
-  const [sceneProgress, setSceneProgress] = useState(0.08);
-  const [sceneReady, setSceneReady] = useState(false);
+  const [heroImageLoaded, setHeroImageLoaded] = useState(false);
   const [taglineLength, setTaglineLength] = useState(0);
   const [taglineComplete, setTaglineComplete] = useState(false);
   const [actionHovered, setActionHovered] = useState(false);
@@ -19,20 +17,9 @@ export default function Home() {
   const pointerPosition = useRef({ x: 0, y: 0 });
   const heroRef = useRef<HTMLElement>(null);
   const [, setLocation] = useLocation();
-  const [performanceMode, setPerformanceMode] = useState<ScenePerformanceMode>(() => {
-    try { const stored = window.localStorage.getItem("workflo-scene-performance"); return stored === "efficient" || stored === "balanced" ? stored : "balanced"; } catch { return "balanced"; }
-  });
   const [reducedMotion, setReducedMotion] = useState(() => {
     try { const stored = window.localStorage.getItem("workflo-reduced-motion"); return stored === "true" || (stored === null && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch { return false; }
   });
-
-  const togglePerformance = () => {
-    setPerformanceMode((mode) => {
-      const next = mode === "balanced" ? "efficient" : "balanced";
-      try { window.localStorage.setItem("workflo-scene-performance", next); } catch { /* Storage can be unavailable in private contexts. */ }
-      return next;
-    });
-  };
 
   const updatePointer = (event: PointerEvent<HTMLElement>) => {
     if (reducedMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -68,12 +55,12 @@ export default function Home() {
     const reset = () => { targetOffset = 0; schedule(); };
     const onScroll = () => {
       if (reducedMotion) return reset();
-      targetOffset = Math.max(-26, Math.min(0, -window.scrollY * 0.055));
+      targetOffset = Math.max(-18, Math.min(0, -window.scrollY * 0.038));
       schedule();
     };
     const onWheel = (event: WheelEvent) => {
       if (reducedMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return reset();
-      targetOffset = Math.max(-26, Math.min(0, targetOffset - event.deltaY * 0.035));
+      targetOffset = Math.max(-18, Math.min(0, targetOffset - event.deltaY * 0.024));
       schedule();
       window.clearTimeout(releaseTimer);
       releaseTimer = window.setTimeout(reset, 720);
@@ -96,7 +83,7 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (!sceneReady) return;
+    if (!heroImageLoaded) return;
     if (reducedMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setTaglineLength(headlineTagline.length); setTaglineComplete(true); return; }
     setTaglineLength(0);
     setTaglineComplete(false);
@@ -107,22 +94,20 @@ export default function Home() {
       if (current >= headlineTagline.length) { window.clearInterval(timer); setTaglineComplete(true); }
     }, 48);
     return () => window.clearInterval(timer);
-  }, [sceneReady, headlineTagline.length, reducedMotion]);
+  }, [heroImageLoaded, headlineTagline.length, reducedMotion]);
 
   useEffect(() => { try { window.localStorage.setItem("workflo-reduced-motion", String(reducedMotion)); } catch { /* Preference persistence is optional. */ } }, [reducedMotion]);
 
   return <main ref={heroRef} className={`minimal-hero ${isEnteringConsole ? "is-entering" : ""} ${reducedMotion ? "motion-reduced" : ""}`} onPointerMove={updatePointer} onPointerLeave={resetPointer}>
-    <SandboxScene scrollProgress={0.38} resetSignal={0} performanceMode={performanceMode} runProgress={0.82} executionStage={2} activeHotspot={null} onHotspotSelect={() => undefined} showHotspots={false} onSceneProgress={setSceneProgress} onSceneReady={() => setSceneReady(true)} pointerPosition={pointerPosition} actionHovered={actionHovered} entering={isEnteringConsole} paused={reducedMotion} />
-    <div className="minimal-hero__sandbox-art" aria-hidden="true" />
+    <div className="minimal-hero__sandbox-art" aria-hidden="true"><img src="/manus-storage/workflo-sandbox-immersive-hero_b63d7110.jpg" alt="" onLoad={() => setHeroImageLoaded(true)} /></div>
     <div className="minimal-hero__scrim" aria-hidden="true" />
-    <Link href="/" className={`minimal-hero__brand ${sceneReady ? "is-ready" : ""}`} aria-label="Workflo home"><span>W/</span><strong>WORKFLO</strong><small>AUTONOMOUS QA</small></Link>
-    <button className={`minimal-hero__motion-control ${sceneReady ? "is-ready" : ""}`} type="button" aria-pressed={reducedMotion} onClick={() => setReducedMotion((value) => !value)}>{reducedMotion ? "MOTION: OFF" : "MOTION: ON"}</button>
-    <div className={`minimal-hero__loader ${sceneReady ? "is-complete" : ""}`} aria-live="polite" aria-label="Loading Workflo sandbox"><span className="minimal-hero__loader-orbit" aria-hidden="true" /><div><span>INITIALIZING SANDBOX</span><strong>{Math.round(sceneProgress * 100)}%</strong></div><i><b style={{ transform: `scaleX(${sceneProgress})` }} /></i></div>
-    <div className={`minimal-hero__content ${sceneReady ? "is-ready" : ""}`}>
+    <Link href="/" className={`minimal-hero__brand ${heroImageLoaded ? "is-ready" : ""}`} aria-label="Workflo home"><span>W/</span><strong>WORKFLO</strong><small>AUTONOMOUS QA</small></Link>
+    <button className={`minimal-hero__motion-control ${heroImageLoaded ? "is-ready" : ""}`} type="button" aria-pressed={reducedMotion} onClick={() => setReducedMotion((value) => !value)}>{reducedMotion ? "MOTION: OFF" : "MOTION: ON"}</button>
+    <div className={`minimal-hero__loader ${heroImageLoaded ? "is-complete" : ""}`} aria-live="polite" aria-label="Loading Workflo sandbox"><span className="minimal-hero__loader-orbit" aria-hidden="true" /><div><span>LOADING SANDBOX</span><strong>{heroImageLoaded ? "100" : ""}%</strong></div><i><b style={{ transform: `scaleX(${heroImageLoaded ? 1 : 0.28})` }} /></i></div>
+    <div className={`minimal-hero__content ${heroImageLoaded ? "is-ready" : ""}`}>
       <h1><span className={`typewriter-tagline ${taglineComplete ? "is-complete" : ""}`} aria-label={headlineTagline}><span aria-hidden="true">{headlineTagline.slice(0, taglineLength)}</span><b aria-hidden="true" /></span></h1>
       <p>{WORKFLO_HERO.description}</p>
       <div className="minimal-hero__actions"><Link className="minimal-hero__primary-action" href="/dashboard" onClick={enterConsole} onPointerEnter={() => setActionHovered(true)} onPointerLeave={() => setActionHovered(false)}>Start Free Trial <ArrowUpRight size={17} /></Link><Link href="/docs" onPointerEnter={() => setActionHovered(true)} onPointerLeave={() => setActionHovered(false)}>Documentation <ArrowUpRight size={17} /></Link></div>
     </div>
-    <button className={`minimal-hero__performance ${sceneReady ? "is-ready" : ""}`} type="button" aria-label={`WebGL performance mode: ${performanceMode}. Switch mode.`} onClick={togglePerformance}>{performanceMode === "balanced" ? "◐" : "◑"}</button>
   </main>;
 }
