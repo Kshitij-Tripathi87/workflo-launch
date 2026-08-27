@@ -127,3 +127,7 @@
 - [x] Replace the typewriter headline with a motion-safe appear–disappear–appear reveal and remove nonessential hero copy.
 - [x] Apply a restrained dark neumorphic treatment without compromising readability or the established technical aesthetic.
 - [x] Validate the revised Docs sidebar and minimal landing experience, then save a delivery checkpoint.
+- [x] Review the landing cursor-depth behavior, neumorphic action styling, and sidebar changelog implementation.
+- [x] Restore subtle cursor-driven sandbox-image movement and add a motion-safe pressed-shadow treatment for landing actions.
+- [x] Connect the Docs changelog to an accessible detailed release-notes modal.
+- [x] Validate landing interaction and release-notes behavior, then save a delivery checkpoint.

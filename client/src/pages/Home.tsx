@@ -2,7 +2,7 @@
  * Minimal Workflo hero — a single immersive runtime surface with only the product thesis
  * and the two essential routes. The interactive sandbox fills the complete viewport.
  */
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type PointerEvent } from "react";
 import { ArrowUpRight, CircleCheckBig } from "lucide-react";
 import { Link } from "wouter";
 import { WORKFLO_HERO } from "@/lib/workfloHero";
@@ -25,6 +25,24 @@ export default function Home() {
     try { const stored = window.localStorage.getItem("workflo-reduced-motion"); return stored === "true" || (stored === null && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch { return false; }
   });
   const trialEmailState = trialEmail.length === 0 ? "idle" : WORK_EMAIL_PATTERN.test(trialEmail.trim()) ? "valid" : "invalid";
+
+  const updatePointer = (event: PointerEvent<HTMLElement>) => {
+    if (event.pointerType !== "mouse" || reducedMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - bounds.left) / bounds.width * 2 - 1;
+    const y = (event.clientY - bounds.top) / bounds.height * 2 - 1;
+    heroRef.current?.style.setProperty("--hero-image-x", `${(x * -8).toFixed(2)}px`);
+    heroRef.current?.style.setProperty("--hero-image-y", `${(y * -6).toFixed(2)}px`);
+    heroRef.current?.style.setProperty("--hero-parallax-x", `${(x * 3).toFixed(2)}px`);
+    heroRef.current?.style.setProperty("--hero-parallax-y", `${(y * 2).toFixed(2)}px`);
+  };
+
+  const resetPointer = () => {
+    heroRef.current?.style.setProperty("--hero-image-x", "0px");
+    heroRef.current?.style.setProperty("--hero-image-y", "0px");
+    heroRef.current?.style.setProperty("--hero-parallax-x", "0px");
+    heroRef.current?.style.setProperty("--hero-parallax-y", "0px");
+  };
 
   useEffect(() => {
     const hero = heroRef.current;
@@ -95,7 +113,7 @@ export default function Home() {
 
   useEffect(() => { try { window.localStorage.setItem("workflo-reduced-motion", String(reducedMotion)); } catch { /* Preference persistence is optional. */ } }, [reducedMotion]);
 
-  return <main ref={heroRef} className={`minimal-hero ${reducedMotion ? "motion-reduced" : ""}`}>
+  return <main ref={heroRef} className={`minimal-hero ${reducedMotion ? "motion-reduced" : ""}`} onPointerMove={updatePointer} onPointerLeave={resetPointer}>
     <div className="minimal-hero__sandbox-art" aria-hidden="true"><img className="minimal-hero__sandbox-poster" src="/manus-storage/workflo-sandbox-immersive-hero_b63d7110.jpg" alt="" onLoad={() => setHeroImageLoaded(true)} /></div>
     <div className="minimal-hero__scrim" aria-hidden="true" />
     <Link href="/" className={`minimal-hero__brand ${heroImageLoaded ? "is-ready" : ""}`} aria-label="Workflo home"><span>W/</span><strong>WORKFLO</strong></Link>

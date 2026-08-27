@@ -9,3 +9,5 @@ The final documentation review identified that the longer desktop navigation nee
 The final desktop review confirms that the landing page uses a single static sandbox image with concise two-line positioning, while the documentation sidebar keeps active navigation and its footer visually separated.
 
 The current review confirms the Docs sidebar search clearly references both API and documentation content, while the changelog stays compact below the navigation. The landing hero remains reduced to its brand, headline, supporting line, and two actions.
+
+The latest interaction review confirms that the sidebar changelog opens an accessible detailed release-notes modal. A mouse pointer event produced the expected nonzero image and content offset variables on the landing hero, restoring subtle sandbox depth without requiring continuous background video motion.

@@ -12,6 +12,9 @@ describe("Workflo product surfaces", () => {
     expect(docs).toContain("CONTAINER IMAGE");
     expect(docs).toContain("FIRST VERIFICATION");
     expect(docs).toContain("Copy package command");
+    expect(docs).toContain("Search API & docs");
+    expect(docs).toContain("docs-release-notes");
+    expect(docs).toContain("Latest product updates.");
     expect(docs).toContain("Copy release command");
     expect(docs).toContain("Copy container command");
     expect(docs).toContain("Copy first-run command");
