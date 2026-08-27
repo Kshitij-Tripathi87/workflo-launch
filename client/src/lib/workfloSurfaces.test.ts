@@ -33,6 +33,7 @@ describe("Workflo product surfaces", () => {
     expect(home).toContain('target="_blank"');
     expect(home).toContain("WORK_EMAIL_PATTERN");
     expect(home).toContain("Email format looks good.");
+    expect(home).toContain("Please confirm consent before requesting a trial.");
     expect(home).toContain("Thank you.");
     expect(home).toContain("onPointerDownOutside");
     expect(home).toContain("onEscapeKeyDown");

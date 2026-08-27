@@ -8,17 +8,22 @@ describe("Workflo hero messaging", () => {
     expect(WORKFLO_HERO.description).toBe("Isolated test runs. Auditable receipts.");
   });
 
-  it("retains a cinematic static fallback and staged entry treatment", () => {
+  it("retains a cinematic video background, static fallback, and staged entry treatment", () => {
     const homeSource = readFileSync(new URL("../pages/Home.tsx", import.meta.url), "utf8");
     const styles = readFileSync(new URL("../index.css", import.meta.url), "utf8");
 
     expect(homeSource).toContain("--hero-scroll-y");
     expect(homeSource).toContain("minimal-hero__loader-orbit");
     expect(homeSource).toContain("workflo-sandbox-immersive-hero_b63d7110.jpg");
+    expect(homeSource).toContain("workflo-sandbox-hero-motion_36908eda.mp4");
+    expect(homeSource).toContain("minimal-hero__sandbox-video");
     expect(homeSource).not.toContain("<SandboxScene");
     expect(homeSource).toContain("/api/trial-signups");
     expect(homeSource).toContain("<Dialog open={trialOpen}");
+    expect(homeSource).toContain("trialConsentAttempted");
+    expect(homeSource).toContain("Please confirm consent before requesting a trial.");
     expect(styles).toContain("workflo-sandbox-immersive-hero_b63d7110.jpg");
+    expect(styles).toContain(".minimal-hero__sandbox-art.is-video-ready .minimal-hero__sandbox-video");
     expect(styles).toContain(".minimal-hero__content.is-ready > h1");
     expect(styles).toContain(".motion-reduced .minimal-hero__content > *");
     expect(styles).toContain("@keyframes workflo-loader-orbit");

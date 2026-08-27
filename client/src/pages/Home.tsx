@@ -19,10 +19,13 @@ export default function Home() {
   const [trialOpen, setTrialOpen] = useState(false);
   const [trialEmail, setTrialEmail] = useState("");
   const [trialConsent, setTrialConsent] = useState(false);
+  const [trialConsentAttempted, setTrialConsentAttempted] = useState(false);
   const [trialState, setTrialState] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [trialMessage, setTrialMessage] = useState("");
   const pointerPosition = useRef({ x: 0, y: 0 });
   const heroRef = useRef<HTMLElement>(null);
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
+  const [heroVideoReady, setHeroVideoReady] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(() => {
     try { const stored = window.localStorage.getItem("workflo-reduced-motion"); return stored === "true" || (stored === null && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch { return false; }
   });
@@ -83,6 +86,10 @@ export default function Home() {
   const submitTrial = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (trialState === "submitting") return;
+    if (!trialConsent) {
+      setTrialConsentAttempted(true);
+      return;
+    }
     setTrialState("submitting");
     setTrialMessage("");
     try {
@@ -104,7 +111,7 @@ export default function Home() {
 
   const changeTrialDialog = (open: boolean) => {
     setTrialOpen(open);
-    if (!open) { setTrialState("idle"); setTrialMessage(""); setTrialConsent(false); }
+    if (!open) { setTrialState("idle"); setTrialMessage(""); setTrialConsent(false); setTrialConsentAttempted(false); }
   };
 
   useEffect(() => {
@@ -123,8 +130,15 @@ export default function Home() {
 
   useEffect(() => { try { window.localStorage.setItem("workflo-reduced-motion", String(reducedMotion)); } catch { /* Preference persistence is optional. */ } }, [reducedMotion]);
 
+  useEffect(() => {
+    const video = heroVideoRef.current;
+    if (!video) return;
+    if (reducedMotion) { video.pause(); return; }
+    void video.play().catch(() => undefined);
+  }, [reducedMotion, heroVideoReady]);
+
   return <main ref={heroRef} className={`minimal-hero ${reducedMotion ? "motion-reduced" : ""}`} onPointerMove={updatePointer} onPointerLeave={resetPointer}>
-    <div className="minimal-hero__sandbox-art" aria-hidden="true"><img src="/manus-storage/workflo-sandbox-immersive-hero_b63d7110.jpg" alt="" onLoad={() => setHeroImageLoaded(true)} /></div>
+    <div className={`minimal-hero__sandbox-art ${heroVideoReady ? "is-video-ready" : ""}`} aria-hidden="true"><img className="minimal-hero__sandbox-poster" src="/manus-storage/workflo-sandbox-immersive-hero_b63d7110.jpg" alt="" onLoad={() => setHeroImageLoaded(true)} /><video ref={heroVideoRef} className="minimal-hero__sandbox-video" autoPlay muted loop playsInline preload="metadata" poster="/manus-storage/workflo-sandbox-immersive-hero_b63d7110.jpg" onCanPlay={() => setHeroVideoReady(true)}><source src="/manus-storage/workflo-sandbox-hero-motion_36908eda.mp4" type="video/mp4" /></video></div>
     <div className="minimal-hero__scrim" aria-hidden="true" />
     <Link href="/" className={`minimal-hero__brand ${heroImageLoaded ? "is-ready" : ""}`} aria-label="Workflo home"><span>W/</span><strong>WORKFLO</strong><small>AUTONOMOUS QA</small></Link>
     <button className={`minimal-hero__motion-control ${heroImageLoaded ? "is-ready" : ""}`} type="button" aria-pressed={reducedMotion} onClick={() => setReducedMotion((value) => !value)}>{reducedMotion ? "MOTION: OFF" : "MOTION: ON"}</button>
@@ -141,7 +155,7 @@ export default function Home() {
           <DialogTitle>Start your free trial.</DialogTitle>
           <DialogDescription>Use a work email to request access to Workflo’s isolated QA environment.</DialogDescription>
         </DialogHeader>
-        {trialState === "success" ? <div className="trial-modal__success" role="status"><div className="trial-modal__success-mark"><CircleCheckBig size={30} /></div><strong>Thank you.</strong><p>{trialMessage}</p><button type="button" onClick={() => changeTrialDialog(false)}>Close</button></div> : <form className="trial-modal__form" onSubmit={submitTrial}><label><span>WORK EMAIL</span><input type="email" name="email" autoComplete="email" placeholder="you@company.com" value={trialEmail} onChange={(event) => setTrialEmail(event.target.value)} required aria-invalid={trialEmailState === "invalid"} aria-describedby="trial-email-feedback" disabled={trialState === "submitting"} /></label><p id="trial-email-feedback" className={`trial-modal__email-feedback is-${trialEmailState}`} aria-live="polite">{trialEmailState === "invalid" ? "Enter a valid work email address." : trialEmailState === "valid" ? "Email format looks good." : ""}</p><div className="trial-modal__consent"><Checkbox id="trial-consent" checked={trialConsent} onCheckedChange={(checked) => setTrialConsent(checked === true)} disabled={trialState === "submitting"} /><label htmlFor="trial-consent">I agree that Workflo may use this email to process my trial request. See the <Link href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</Link>.</label></div>{trialState === "error" && <p className="trial-modal__error" role="alert">{trialMessage}</p>}<button type="submit" disabled={trialState === "submitting" || !trialConsent || trialEmailState !== "valid"}>{trialState === "submitting" ? "Submitting…" : "Request access"}<ArrowUpRight size={16} /></button><small>Your email is used only to process this trial request.</small></form>}
+        {trialState === "success" ? <div className="trial-modal__success" role="status"><div className="trial-modal__success-mark"><CircleCheckBig size={30} /></div><strong>Thank you.</strong><p>{trialMessage}</p><button type="button" onClick={() => changeTrialDialog(false)}>Close</button></div> : <form className="trial-modal__form" onSubmit={submitTrial}><label><span>WORK EMAIL</span><input type="email" name="email" autoComplete="email" placeholder="you@company.com" value={trialEmail} onChange={(event) => setTrialEmail(event.target.value)} required aria-invalid={trialEmailState === "invalid"} aria-describedby="trial-email-feedback" disabled={trialState === "submitting"} /></label><p id="trial-email-feedback" className={`trial-modal__email-feedback is-${trialEmailState}`} aria-live="polite">{trialEmailState === "invalid" ? "Enter a valid work email address." : trialEmailState === "valid" ? "Email format looks good." : ""}</p><div className={`trial-modal__consent ${trialConsentAttempted && !trialConsent ? "is-invalid" : ""}`}><Checkbox id="trial-consent" checked={trialConsent} aria-invalid={trialConsentAttempted && !trialConsent} aria-describedby="trial-consent-error" onCheckedChange={(checked) => { setTrialConsent(checked === true); if (checked) setTrialConsentAttempted(false); }} disabled={trialState === "submitting"} /><label htmlFor="trial-consent">I agree that Workflo may use this email to process my trial request. See the <Link href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</Link>.</label></div>{trialConsentAttempted && !trialConsent && <p id="trial-consent-error" className="trial-modal__consent-error" role="alert">Please confirm consent before requesting a trial.</p>}{trialState === "error" && <p className="trial-modal__error" role="alert">{trialMessage}</p>}<button type="submit" disabled={trialState === "submitting" || trialEmailState !== "valid"}>{trialState === "submitting" ? "Submitting…" : "Request access"}<ArrowUpRight size={16} /></button><small>Your email is used only to process this trial request.</small></form>}
       </DialogContent>
     </Dialog>
   </main>;

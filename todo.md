@@ -108,3 +108,8 @@
 - [x] Add a Create your first test run action to the empty QA Console.
 - [x] Open the trial-form privacy policy in a new tab and add real-time email validation feedback.
 - [x] Validate the revised interactions and save a delivery checkpoint.
+- [x] Review the current hero visual, loading treatment, and consent-required submission flow.
+- [x] Create and prepare a cinematic moving sandbox background that retains safe space for hero copy.
+- [x] Add a clear inline consent error when a user attempts to submit without agreeing.
+- [x] Replace static hero rendering with loading-aware motion playback and preserve an accessible fallback.
+- [x] Validate the new hero motion and trial-form feedback, then save a delivery checkpoint.
