@@ -58,3 +58,6 @@
 - [x] Refine the hero headline and supporting copy into sharper Workflo positioning.
 - [x] Add a clear Workflo wordmark at the top-left of the minimal hero.
 - [x] Verify the revised minimal hero and save a delivery checkpoint.
+- [x] Make the Workflo wordmark a clear clickable home control with subtle glow feedback.
+- [x] Add a completed-load typewriter reveal for the Autonomous QA tagline.
+- [x] Validate the refined hero interactions and save a delivery checkpoint.
