@@ -78,3 +78,6 @@
 - [x] Rename the primary hero action to Start Free Trial and refine its hover animation.
 - [x] Shorten the hero subheading into a punchier editorial line that remains within two lines.
 - [x] Validate the CTA and revised supporting copy with automated and visual checks.
+- [x] Review the Workflo hero at small mobile breakpoints and identify readability or spacing issues.
+- [x] Improve mobile heading, subheading, action layout, and tap-target spacing while preserving the minimal composition.
+- [x] Validate the responsive hero and save a delivery checkpoint.
