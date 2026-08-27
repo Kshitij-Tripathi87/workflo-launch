@@ -170,6 +170,20 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
     floatingParticles.renderOrder = 4;
     root.add(floatingParticles);
 
+    const executionField = new THREE.Group();
+    executionField.position.y = -0.66;
+    const fieldMaterial = new THREE.MeshBasicMaterial({ color: 0x9fc6d4, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false });
+    const scanMaterial = new THREE.MeshBasicMaterial({ color: 0x7fa8b8, transparent: true, opacity: 0.1, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false });
+    const orbitA = new THREE.Mesh(new THREE.TorusGeometry(1.43, 0.009, 6, 84), fieldMaterial);
+    orbitA.rotation.x = Math.PI / 2;
+    const orbitB = new THREE.Mesh(new THREE.TorusGeometry(1.1, 0.007, 6, 84), fieldMaterial.clone());
+    orbitB.rotation.set(Math.PI / 2.9, 0.43, -0.18);
+    const scanBand = new THREE.Mesh(new THREE.RingGeometry(0.58, 1.38, 72), scanMaterial);
+    scanBand.rotation.x = -Math.PI / 2;
+    scanBand.position.y = -0.46;
+    executionField.add(orbitA, orbitB, scanBand);
+    root.add(executionField);
+
     const hotspotNodes: Array<{ id: SandboxHotspotId; group: THREE.Group; material: THREE.MeshStandardMaterial }> = [];
     const createHotspot = (id: SandboxHotspotId, position: [number, number, number]) => {
       const group = new THREE.Group();
@@ -344,6 +358,7 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
     renderer.domElement.addEventListener("pointercancel", onPointerUp);
 
     let animationFrame = 0;
+    let pauseTimer = 0;
     let firstFrame = true;
     const draw = (time: number) => {
       if (pausedRef.current) {
@@ -353,7 +368,7 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
           onSceneProgressRef.current?.(1);
           onSceneReadyRef.current?.();
         }
-        animationFrame = window.requestAnimationFrame(draw);
+        pauseTimer = window.setTimeout(() => { animationFrame = window.requestAnimationFrame(draw); }, 250);
         return;
       }
       if (lastPerformanceMode !== performanceRef.current) {
@@ -393,6 +408,14 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
       entryBoost += (targetEntryBoost - entryBoost) * 0.17;
       camera.position.z += ((entryDistance - entryBoost * 5.6) - camera.position.z) * 0.14;
       root.scale.setScalar(1 + entryBoost * 0.12);
+      const fieldPulse = reduceMotion ? 0 : Math.sin(time * 0.0012) * 0.5 + 0.5;
+      executionField.rotation.y = reduceMotion ? 0 : time * 0.00017;
+      executionField.rotation.z = reduceMotion ? 0 : Math.sin(time * 0.00039) * 0.06;
+      orbitA.rotation.z = reduceMotion ? 0 : time * 0.00052;
+      orbitB.rotation.y = 0.43 + (reduceMotion ? 0 : time * 0.00038);
+      scanBand.position.y = -0.73 + (reduceMotion ? 0 : fieldPulse * 0.74);
+      fieldMaterial.opacity = 0.18 + runIntensity * 0.12 + actionTone * 0.1;
+      scanMaterial.opacity = 0.055 + runIntensity * 0.07 + fieldPulse * 0.04;
       lights.children.forEach((node, index) => { node.scale.setScalar(0.72 + runIntensity * 0.36 + (reduceMotion ? 0 : Math.sin(time * 0.0022 + index) * 0.1)); });
       hotspotNodes.forEach((hotspot, index) => {
         const selected = hotspot.id === activeHotspotRef.current;
@@ -413,6 +436,7 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
 
     return () => {
       window.cancelAnimationFrame(animationFrame);
+      window.clearTimeout(pauseTimer);
       resizeObserver.disconnect();
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       renderer.domElement.removeEventListener("pointermove", onPointerMove);
