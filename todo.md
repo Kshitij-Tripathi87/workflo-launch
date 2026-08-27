@@ -117,3 +117,8 @@
 - [x] Add a restrained visual transition at the video loop boundary to avoid a hard replay cut.
 - [x] Add an accessible background-video play/pause control and synchronize it with motion preferences.
 - [x] Validate the loop and playback-control behavior, then save a delivery checkpoint.
+- [x] Review the landing hero copy and API-reference documentation heading hierarchy.
+- [x] Replace the landing heading and subheading with concise, direct Workflo positioning and refine the API-reference introduction.
+- [x] Rebalance the documentation side panel with more open spacing and clearer active-state hierarchy.
+- [x] Remove the hero background video and excess motion controls while retaining one restrained static sandbox image.
+- [x] Validate the final simplified landing and documentation experience, then save a delivery checkpoint.

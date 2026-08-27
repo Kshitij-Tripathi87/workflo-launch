@@ -1,4 +1,4 @@
 export const WORKFLO_HERO = {
-  tagline: "Autonomous QA with verifiable evidence.",
-  description: "Isolated test runs. Auditable receipts.",
+  tagline: "QA you can verify.",
+  description: "Isolated runs. Evidence you can review.",
 } as const;
