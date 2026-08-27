@@ -44,3 +44,7 @@
 - [x] Add richer technical explanations for isolation, execution lifecycle, receipts, and CI integration.
 - [x] Add visual protocol and receipt diagrams to improve comprehension.
 - [x] Validate the upgraded documentation across desktop and mobile, then save a delivery checkpoint.
+- [ ] Add client-side reference search across Workflo documentation and run-status terms.
+- [ ] Add reusable copy-to-clipboard confirmation for all technical examples.
+- [ ] Add a dedicated security and compliance reference with visual isolation and encryption indicators.
+- [x] Validate the expanded documentation interactions and save a delivery checkpoint.

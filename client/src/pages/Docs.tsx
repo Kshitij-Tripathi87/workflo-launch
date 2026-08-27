@@ -1,96 +1,64 @@
 /**
- * Instrument Panel Noir — documentation as an operational reference, using inspectable
- * protocol stages, isolation diagrams, and receipt anatomy instead of generic prose.
+ * Instrument Panel Noir — an operational Workflo reference with search, inspectable
+ * protocol stages, copyable examples, and security-control guidance.
  */
-import { useState } from "react";
-import { Braces, Check, ChevronRight, CircleCheckBig, Copy, FileCheck2, Github, GitPullRequest, Layers3, LockKeyhole, Network, ScanSearch, ShieldCheck, Terminal, Zap } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Braces, Check, ChevronRight, CircleCheckBig, Copy, Database, FileCheck2, Github, GitPullRequest, KeyRound, Layers3, LockKeyhole, Network, ScanSearch, Search, ServerCog, ShieldCheck, Terminal, X, Zap } from "lucide-react";
 import { Link } from "wouter";
 
 const nav = [
-  ["Overview", "Getting started", "#getting-started"],
-  ["Core protocol", "Run lifecycle", "#lifecycle"],
-  ["Core protocol", "Isolation model", "#isolation"],
-  ["Evidence", "Test receipts", "#receipts-doc"],
-  ["Guides", "CI integration", "#ci-integration"],
+  ["Overview", "Getting started", "#getting-started"], ["Core protocol", "Run lifecycle", "#lifecycle"], ["Core protocol", "Isolation model", "#isolation"], ["Evidence", "Test receipts", "#receipts-doc"], ["Reference", "API and run status", "#api-reference"], ["Security", "Security controls", "#security-controls"], ["Guides", "CI integration", "#ci-integration"],
 ];
-
 const lifecycle = [
   { code: "01", title: "Specify", icon: Braces, text: "Define the behavior to evaluate in a test file, release check, or natural-language request.", records: ["intent", "target", "policy"] },
   { code: "02", title: "Provision", icon: Layers3, text: "Workflo prepares an isolated runtime with the browser, fixtures, and constraints required for that run.", records: ["sandbox_id", "runtime", "network policy"] },
   { code: "03", title: "Observe", icon: ScanSearch, text: "The agent executes the test sequence while preserving the event order, visible state, and relevant artifacts.", records: ["event trace", "artifacts", "assertions"] },
-  { code: "04", title: "Attest", icon: FileCheck2, text: "The result is finalized as a receipt that ties the outcome to the exact execution context that produced it.", records: ["result", "hash", "receipt URI"] },
+  { code: "04", title: "Attest", icon: FileCheck2, text: "The result is finalized as a receipt that connects the outcome to the exact execution context that produced it.", records: ["result", "hash", "receipt URI"] },
 ];
-
 const receiptFields = [
-  ["run_id", "Uniquely identifies the test sequence and its isolated execution context."],
-  ["intent", "Captures the requested behavior and the evaluation criteria supplied to Workflo."],
-  ["environment", "Records the runtime profile, configured policy, and browser context used for the run."],
-  ["events", "Preserves the ordered actions, assertions, timings, and observable state changes."],
-  ["artifacts", "Links screenshots, logs, traces, and other evidence generated during execution."],
-  ["attestation", "Seals the final outcome, receipt version, and integrity hash into a reviewable artifact."],
+  ["run_id", "Identifies the test sequence and its isolated execution context."], ["intent", "Captures the requested behavior and evaluation criteria supplied to Workflo."], ["environment", "Records the runtime profile, configured policy, and browser context."], ["events", "Preserves ordered actions, assertions, timings, and observable state changes."], ["artifacts", "Links screenshots, logs, traces, and other evidence generated during execution."], ["attestation", "Seals the outcome, receipt version, and integrity hash into one reviewable record."],
 ];
-
 const integrationExamples = {
   "GitHub Actions": `- name: Run release verification\n  run: workflo run ./tests/checkout.spec.ts --receipt\n\n- name: Gate deploy\n  run: workflo verify \${{ steps.workflo.outputs.receipt_uri }}`,
-  "Command line": `workflo run ./tests/checkout.spec.ts \\\n  --environment staging \\\n  --receipt\n\n# returns: wf://receipts/0ec7-9b20`,
+  "Command line": `workflo run ./tests/checkout.spec.ts \\\n+  --environment staging \\\n+  --receipt\n\n# returns: wf://receipts/0ec7-9b20`,
 };
+const runStatusExample = `GET /v1/runs/wf-4492\n\n200 OK\n{\n  "run_id": "wf-4492",\n  "status": "attested",\n  "receipt_uri": "wf://receipts/0ec7-9b20"\n}`;
+const searchEntries = [
+  ["Getting started", "Define a test intent and start an isolated Workflo execution.", "getting-started", "OVERVIEW"], ["Run lifecycle", "Specify, provision, observe, and attest each test run.", "lifecycle", "PROTOCOL"], ["Isolation model", "Review sandbox boundaries, runtime controls, and network posture.", "isolation", "RUNTIME"], ["Test receipts", "Inspect receipt fields, artifacts, integrity data, and attestation.", "receipts-doc", "EVIDENCE"], ["Run status API", "Retrieve a run status and receipt URI from the API reference.", "api-reference", "API"], ["Security controls", "Review data isolation, encrypted transport, encrypted storage, and access scope.", "security-controls", "SECURITY"], ["CI integration", "Run verification in GitHub Actions or from the command line.", "ci-integration", "GUIDES"],
+];
+
+function CopyAction({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => { try { await navigator.clipboard.writeText(value); } catch { /* Clipboard access can be unavailable. */ } setCopied(true); window.setTimeout(() => setCopied(false), 1500); };
+  return <button className="docs-copy-action" type="button" onClick={copy} aria-label={copied ? "Copied to clipboard" : "Copy code to clipboard"}>{copied ? <Check size={14} /> : <Copy size={14} />}<span>{copied ? "Copied" : "Copy"}</span><b role="tooltip">{copied ? "Copied to clipboard" : "Copy snippet"}</b></button>;
+}
 
 export default function Docs() {
   const [activeStep, setActiveStep] = useState(0);
   const [activeField, setActiveField] = useState(0);
   const [integration, setIntegration] = useState<keyof typeof integrationExamples>("GitHub Actions");
-  const [copied, setCopied] = useState(false);
+  const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const stage = lifecycle[activeStep];
-
-  const copyCommand = async () => {
-    try { await navigator.clipboard.writeText(integrationExamples[integration]); } catch { /* Clipboard access can be unavailable. */ }
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1500);
-  };
+  const matches = useMemo(() => { const input = query.trim().toLowerCase(); return input ? searchEntries.filter((entry) => entry.join(" ").toLowerCase().includes(input)).slice(0, 5) : []; }, [query]);
+  const selectSearch = (target: string) => { document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" }); setSearchOpen(false); };
 
   return <main className="app-page docs-page">
     <aside className="docs-sidebar">
       <div className="sidebar-section-label">WORKFLO / DOCS</div>
-      <a className="docs-search" href="#getting-started">Browse the protocol <span>↗</span></a>
+      <div className="docs-search-wrap"><label className="docs-search"><Search size={13} /><input value={query} onFocus={() => setSearchOpen(true)} onChange={(event) => { setQuery(event.target.value); setSearchOpen(true); }} onKeyDown={(event) => { if (event.key === "Enter" && matches[0]) selectSearch(matches[0][2]); if (event.key === "Escape") setSearchOpen(false); }} placeholder="Search reference" aria-label="Search Workflo documentation" />{query && <button type="button" onClick={() => { setQuery(""); setSearchOpen(false); }} aria-label="Clear search"><X size={12} /></button>}</label>{searchOpen && query && <div className="docs-search-results" role="listbox">{matches.length ? matches.map(([title, detail, target, tag]) => <button key={target} role="option" type="button" onClick={() => selectSearch(target)}><span>{tag}</span><strong>{title}</strong><small>{detail}</small></button>) : <p>No matching reference found.</p>}</div>}</div>
       <nav aria-label="Documentation navigation">{nav.map(([section, item, href], index) => <div className="docs-nav-block" key={item}>{(index === 0 || nav[index - 1][0] !== section) && <span>{section}</span>}<a className={item === "Getting started" ? "docs-nav-current" : ""} href={href}>{item}<ChevronRight size={14} /></a></div>)}</nav>
       <div className="docs-sidebar-bottom"><span className="signal-dot" /> CONTROL PLANE<br /><strong>Reference / v1.0</strong></div>
     </aside>
-
     <article className="docs-content" id="top">
       <div className="docs-breadcrumb"><Link href="/">Workflo</Link><ChevronRight size={13} /> Reference <ChevronRight size={13} /> <span>Core protocol</span></div>
-      <section className="docs-hero" id="getting-started">
-        <div className="docs-topline"><span>CORE PROTOCOL</span><span>REFERENCE / V1.0</span></div>
-        <h1>Autonomous QA,<br /><em>made inspectable.</em></h1>
-        <p className="docs-lede">Workflo turns a software test into an isolated execution record. The protocol keeps test intent, environment, evidence, and outcome connected from the first instruction to the final receipt.</p>
-        <div className="docs-quick-facts"><div><Braces size={17} /><span>INPUT</span><strong>Test intent</strong></div><div><LockKeyhole size={17} /><span>RUNTIME</span><strong>Isolated sandbox</strong></div><div><FileCheck2 size={17} /><span>OUTPUT</span><strong>Test receipt</strong></div></div>
-      </section>
-
-      <section className="docs-section" id="lifecycle">
-        <div className="docs-section-kicker"><span>01</span> RUN LIFECYCLE</div>
-        <div className="docs-section-heading"><div><h2>One protocol.<br />Four observable stages.</h2><p>Each stage adds context to the record. Select a stage to inspect what Workflo carries forward into the final receipt.</p></div><span className="docs-section-marker">WF / FLOW</span></div>
-        <div className="protocol-map" role="tablist" aria-label="Workflo run lifecycle">{lifecycle.map((item, index) => { const Icon = item.icon; return <button key={item.title} role="tab" aria-selected={activeStep === index} className={activeStep === index ? "is-active" : ""} onClick={() => setActiveStep(index)}><span>{item.code}</span><Icon size={18} /><strong>{item.title}</strong>{index < lifecycle.length - 1 && <i />}</button>; })}</div>
-        <div className="protocol-detail"><div className="protocol-detail-icon"><stage.icon size={25} /></div><div><span>STAGE {stage.code} / {stage.title.toUpperCase()}</span><h3>{stage.text}</h3></div><div className="protocol-records"><span>RECORD ADDED</span>{stage.records.map((record) => <code key={record}>{record}</code>)}</div></div>
-      </section>
-
-      <section className="docs-section" id="isolation">
-        <div className="docs-section-kicker"><span>02</span> ISOLATION MODEL</div>
-        <div className="docs-section-heading"><div><h2>Constrain the environment.<br />Preserve the evidence.</h2><p>Workflo treats the sandbox as a defined execution perimeter. A test can operate within the capabilities it needs while the resulting record retains the relevant context for review.</p></div></div>
-        <div className="isolation-layout"><div className="isolation-diagram" aria-label="Diagram of the Workflo isolation model"><div className="isolation-boundary isolation-boundary--outer"><span>POLICY BOUNDARY</span></div><div className="isolation-boundary isolation-boundary--inner"><span>EPHEMERAL RUNTIME</span></div><div className="isolation-core"><ShieldCheck size={24} /><strong>RUN<br />CONTEXT</strong></div><div className="isolation-path isolation-path--a"><i /> <span>intent</span></div><div className="isolation-path isolation-path--b"><i /> <span>artifacts</span></div><div className="isolation-path isolation-path--c"><i /> <span>receipt</span></div></div><div className="isolation-controls"><article><LockKeyhole size={18} /><div><strong>Ephemeral execution</strong><p>Each run is provisioned as a discrete context rather than continuing inside a shared testing session.</p></div></article><article><Network size={18} /><div><strong>Defined network posture</strong><p>Runtime connectivity is an explicit part of the run context, not an invisible prerequisite.</p></div></article><article><ShieldCheck size={18} /><div><strong>Reviewable policy</strong><p>Receipt metadata provides a clear reference point for the controls applied during execution.</p></div></article></div></div>
-      </section>
-
-      <section className="docs-section" id="receipts-doc">
-        <div className="docs-section-kicker"><span>03</span> TEST RECEIPTS</div>
-        <div className="docs-section-heading"><div><h2>Evidence travels<br />with the result.</h2><p>A receipt is the portable outcome of a Workflo run. It describes what was requested, where it ran, what was observed, and how the resulting record can be verified.</p></div><span className="docs-section-marker">WF / RECEIPT</span></div>
-        <div className="receipt-reference"><div className="receipt-fields" role="list">{receiptFields.map(([field, description], index) => <button key={field} role="listitem" className={activeField === index ? "is-active" : ""} onClick={() => setActiveField(index)}><code>{field}</code><ChevronRight size={15} /></button>)}</div><div className="receipt-field-detail"><div className="receipt-field-detail-top"><span>RECEIPT FIELD</span><CircleCheckBig size={17} /></div><code>{receiptFields[activeField][0]}</code><p>{receiptFields[activeField][1]}</p><div className="receipt-mini-trace"><span>RUN</span><i /><span>CONTEXT</span><i /><strong>SEALED</strong></div></div></div>
-        <div className="receipt-legend"><span><i /> Required context</span><span><i /> Observable evidence</span><span><i /> Integrity record</span></div>
-      </section>
-
-      <section className="docs-section" id="ci-integration">
-        <div className="docs-section-kicker"><span>04</span> CI INTEGRATION</div>
-        <div className="docs-section-heading"><div><h2>Gate releases with<br />a receipt, not a guess.</h2><p>Use Workflo as a local command or as a stage in your release workflow. The result is returned as a receipt URI that teams and automation can inspect.</p></div></div>
-        <div className="integration-workbench"><div className="integration-tabs" role="tablist"><button role="tab" aria-selected={integration === "GitHub Actions"} className={integration === "GitHub Actions" ? "is-active" : ""} onClick={() => setIntegration("GitHub Actions")}><Github size={16} /> GitHub Actions</button><button role="tab" aria-selected={integration === "Command line"} className={integration === "Command line" ? "is-active" : ""} onClick={() => setIntegration("Command line")}><Terminal size={16} /> Command line</button></div><div className="docs-code-block docs-code-block--enhanced"><div><span><Terminal size={15} /> {integration.toLowerCase()}</span><button onClick={copyCommand}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? "Copied" : "Copy"}</button></div><pre>{integrationExamples[integration]}</pre></div><div className="integration-notes"><span><Zap size={15} /> RECEIPT FLOW</span><p>The receipt URI can be attached to a pull request, evaluated by a deployment rule, or opened in the Workflo QA Console.</p><Link href="/dashboard">Open QA Console <ChevronRight size={16} /></Link></div></div>
-      </section>
-
+      <section className="docs-hero" id="getting-started"><div className="docs-topline"><span>CORE PROTOCOL</span><span>REFERENCE / V1.0</span></div><h1>Autonomous QA,<br /><em>made inspectable.</em></h1><p className="docs-lede">Workflo turns a software test into an isolated execution record. The protocol keeps test intent, environment, evidence, and outcome connected from the first instruction to the final receipt.</p><div className="docs-quick-facts"><div><Braces size={17} /><span>INPUT</span><strong>Test intent</strong></div><div><LockKeyhole size={17} /><span>RUNTIME</span><strong>Isolated sandbox</strong></div><div><FileCheck2 size={17} /><span>OUTPUT</span><strong>Test receipt</strong></div></div></section>
+      <section className="docs-section" id="lifecycle"><div className="docs-section-kicker"><span>01</span> RUN LIFECYCLE</div><div className="docs-section-heading"><div><h2>One protocol.<br />Four observable stages.</h2><p>Select a stage to inspect the records Workflo adds before the outcome is attested.</p></div><span className="docs-section-marker">WF / FLOW</span></div><div className="protocol-map" role="tablist" aria-label="Workflo run lifecycle">{lifecycle.map((item, index) => { const Icon = item.icon; return <button key={item.title} role="tab" aria-selected={activeStep === index} className={activeStep === index ? "is-active" : ""} onClick={() => setActiveStep(index)}><span>{item.code}</span><Icon size={18} /><strong>{item.title}</strong>{index < lifecycle.length - 1 && <i />}</button>; })}</div><div className="protocol-detail"><div className="protocol-detail-icon"><stage.icon size={25} /></div><div><span>STAGE {stage.code} / {stage.title.toUpperCase()}</span><h3>{stage.text}</h3></div><div className="protocol-records"><span>RECORD ADDED</span>{stage.records.map((record) => <code key={record}>{record}</code>)}</div></div></section>
+      <section className="docs-section" id="isolation"><div className="docs-section-kicker"><span>02</span> ISOLATION MODEL</div><div className="docs-section-heading"><div><h2>Constrain the environment.<br />Preserve the evidence.</h2><p>Workflo treats the sandbox as a defined execution perimeter. The run retains the relevant context for a subsequent review.</p></div></div><div className="isolation-layout"><div className="isolation-diagram" aria-label="Diagram of the Workflo isolation model"><div className="isolation-boundary isolation-boundary--outer"><span>POLICY BOUNDARY</span></div><div className="isolation-boundary isolation-boundary--inner"><span>EPHEMERAL RUNTIME</span></div><div className="isolation-core"><ShieldCheck size={24} /><strong>RUN<br />CONTEXT</strong></div><div className="isolation-path isolation-path--a"><i /> <span>intent</span></div><div className="isolation-path isolation-path--b"><i /> <span>artifacts</span></div><div className="isolation-path isolation-path--c"><i /> <span>receipt</span></div></div><div className="isolation-controls"><article><LockKeyhole size={18} /><div><strong>Ephemeral execution</strong><p>Each run is provisioned as a discrete context rather than continuing in a shared session.</p></div></article><article><Network size={18} /><div><strong>Defined network posture</strong><p>Runtime connectivity is an explicit part of the execution context.</p></div></article><article><ShieldCheck size={18} /><div><strong>Reviewable policy</strong><p>Receipt metadata provides a reference point for controls applied during execution.</p></div></article></div></div></section>
+      <section className="docs-section" id="receipts-doc"><div className="docs-section-kicker"><span>03</span> TEST RECEIPTS</div><div className="docs-section-heading"><div><h2>Evidence travels<br />with the result.</h2><p>A receipt describes what was requested, where it ran, what was observed, and how the record can be verified.</p></div><span className="docs-section-marker">WF / RECEIPT</span></div><div className="receipt-reference"><div className="receipt-fields" role="list">{receiptFields.map(([field], index) => <button key={field} role="listitem" className={activeField === index ? "is-active" : ""} onClick={() => setActiveField(index)}><code>{field}</code><ChevronRight size={15} /></button>)}</div><div className="receipt-field-detail"><div className="receipt-field-detail-top"><span>RECEIPT FIELD</span><CircleCheckBig size={17} /></div><code>{receiptFields[activeField][0]}</code><p>{receiptFields[activeField][1]}</p><div className="receipt-mini-trace"><span>RUN</span><i /><span>CONTEXT</span><i /><strong>SEALED</strong></div></div></div><div className="receipt-legend"><span><i /> Required context</span><span><i /> Observable evidence</span><span><i /> Integrity record</span></div></section>
+      <section className="docs-section" id="api-reference"><div className="docs-section-kicker"><span>04</span> API AND RUN STATUS</div><div className="docs-section-heading"><div><h2>Look up a run.<br />Retrieve its receipt.</h2><p>The run-status reference connects an execution identifier to its current state and completed receipt.</p></div><span className="docs-section-marker">WF / API</span></div><div className="api-reference-grid"><div className="api-route-list"><div><span>METHOD</span><span>PATH</span><span>RESULT</span></div><button type="button"><code>GET</code><strong>/v1/runs/:run_id</strong><span>Current run state</span></button><button type="button"><code>GET</code><strong>/v1/receipts/:receipt_id</strong><span>Receipt record</span></button><button type="button"><code>POST</code><strong>/v1/runs</strong><span>New test run</span></button></div><div className="docs-code-block docs-code-block--api"><div><span><ServerCog size={15} /> run status response</span><CopyAction value={runStatusExample} /></div><pre>{runStatusExample}</pre></div></div></section>
+      <section className="docs-section" id="security-controls"><div className="docs-section-kicker"><span>05</span> SECURITY AND COMPLIANCE</div><div className="docs-section-heading"><div><h2>Security controls<br />you can review.</h2><p>These control markers support implementation and review. Confirm the exact deployment configuration and formal compliance scope for your environment before relying on it for regulated workloads.</p></div><span className="docs-section-marker">WF / CONTROLS</span></div><div className="security-badges"><article><div className="security-badge-icon"><LockKeyhole size={20} /></div><span>DATA ISOLATION</span><strong>Sandbox scoped</strong><p>Separate the execution context for each test run.</p></article><article><div className="security-badge-icon"><Network size={20} /></div><span>ENCRYPTION IN TRANSIT</span><strong>Transport policy</strong><p>Validate encrypted transport requirements in your deployment configuration.</p></article><article><div className="security-badge-icon"><Database size={20} /></div><span>ENCRYPTION AT REST</span><strong>Storage policy</strong><p>Confirm artifact and receipt storage encryption settings with your platform team.</p></article><article><div className="security-badge-icon"><KeyRound size={20} /></div><span>ACCESS BOUNDARY</span><strong>Scoped controls</strong><p>Apply least-privilege credentials and retain access audit evidence.</p></article></div><div className="security-review-table"><div><span>CONTROL AREA</span><span>REVIEW EVIDENCE</span><span>RUN RECORD</span></div><div><strong>Execution boundary</strong><p>Environment policy and sandbox context</p><code>environment</code></div><div><strong>Encrypted transport</strong><p>Deployment transport configuration</p><code>network policy</code></div><div><strong>Artifact storage</strong><p>Storage policy and retention settings</p><code>artifacts</code></div><div><strong>Access control</strong><p>Role, scope, and audit configuration</p><code>attestation</code></div></div></section>
+      <section className="docs-section" id="ci-integration"><div className="docs-section-kicker"><span>06</span> CI INTEGRATION</div><div className="docs-section-heading"><div><h2>Gate releases with<br />a receipt, not a guess.</h2><p>Use Workflo as a local command or as a stage in your release workflow. The result is returned as a receipt URI for teams and automation to inspect.</p></div></div><div className="integration-workbench"><div className="integration-tabs" role="tablist"><button role="tab" aria-selected={integration === "GitHub Actions"} className={integration === "GitHub Actions" ? "is-active" : ""} onClick={() => setIntegration("GitHub Actions")}><Github size={16} /> GitHub Actions</button><button role="tab" aria-selected={integration === "Command line"} className={integration === "Command line" ? "is-active" : ""} onClick={() => setIntegration("Command line")}><Terminal size={16} /> Command line</button></div><div className="docs-code-block docs-code-block--enhanced"><div><span><Terminal size={15} /> {integration.toLowerCase()}</span><CopyAction value={integrationExamples[integration]} /></div><pre>{integrationExamples[integration]}</pre></div><div className="integration-notes"><span><Zap size={15} /> RECEIPT FLOW</span><p>The receipt URI can be attached to a pull request, evaluated by a deployment rule, or opened in the Workflo QA Console.</p><Link href="/dashboard">Open QA Console <ChevronRight size={16} /></Link></div></div></section>
       <section className="docs-final-callout"><GitPullRequest size={19} /><div><span>READY FOR REVIEW</span><strong>Open an execution record in the QA Console.</strong></div><Link href="/dashboard">View test runs <ChevronRight size={17} /></Link></section>
     </article>
   </main>;
