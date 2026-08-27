@@ -67,6 +67,7 @@ export default function Home() {
     "--box-shift-y": `${scrollProgress * 1.5}%`,
   } as CSSProperties;
   const entryOpacity = Math.min(1, Math.max(0, (scrollProgress - 0.28) * 2.1));
+  const featureReveal = Math.min(1, Math.max(0, (scrollProgress - 0.72) * 4.2));
 
   return <div className="site-shell">
     <aside className="trace-rail" aria-hidden="true"><span>WF / 001</span><i /><span>CONTROL PLANE</span></aside>
@@ -96,6 +97,11 @@ export default function Home() {
             <div className="scene-controls"><span>DRAG TO INSPECT</span><button className="scene-performance-toggle" type="button" aria-pressed={performanceMode === "efficient"} onClick={() => setPerformanceMode((mode) => mode === "balanced" ? "efficient" : "balanced")}>{performanceMode === "balanced" ? "Performance: balanced" : "Performance: efficient"}</button><button type="button" onClick={() => setResetSignal((current) => current + 1)}>Reset view</button></div>
             <div className="hero-corner hero-corner--a" /><div className="hero-corner hero-corner--b" />
           </div>
+          <section className="in-sandbox-features" aria-hidden={featureReveal < 0.1} style={{ opacity: featureReveal, transform: `translateY(${(1 - featureReveal) * 28}px)` }}>
+            <div className="in-sandbox-title"><span>CORE CAPABILITIES / INSIDE THE RUNTIME</span><h2>Controls that make<br /><em>autonomy inspectable.</em></h2></div>
+            <div className="in-sandbox-feature-grid"><article><span>01 / ISOLATION</span><LockKeyhole size={18} /><strong>Runtime isolation</strong><p>Test resources are created for the run and retired at completion.</p></article><article><span>02 / OBSERVATION</span><ScanSearch size={18} /><strong>Event provenance</strong><p>Actions retain their ordering, timing, and observed state.</p></article><article><span>03 / RECEIPT</span><FileCheck2 size={18} /><strong>Receipt attestation</strong><p>Result context is carried into a durable verification record.</p></article></div>
+            <div className="in-sandbox-footer"><span>WF-4492 / SANDBOX INTERIOR</span><span>EXECUTION CONTEXT / AVAILABLE</span></div>
+          </section>
         </div>
       </section>
 

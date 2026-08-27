@@ -24,3 +24,5 @@
 - [x] Rework the main hero into a first-load cinematic sandbox-entry sequence.
 - [x] Couple enclosure rotation and camera travel directly to scroll progress so the viewer enters the runtime.
 - [x] Optimize the 3D update loop for smooth scroll-driven playback and validate the hero experience.
+- [x] Add a scroll-synchronized core-feature reveal that appears only after the camera enters the sandbox.
+- [x] Validate the feature fade-in composition across the hero transition and save a delivery checkpoint.
