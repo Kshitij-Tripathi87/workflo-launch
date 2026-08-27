@@ -16,12 +16,14 @@ type SandboxSceneProps = {
   showHotspots?: boolean;
   onSceneProgress?: (progress: number) => void;
   onSceneReady?: () => void;
+  pointerPosition?: { current: { x: number; y: number } };
+  actionHovered?: boolean;
 };
 
 export type ScenePerformanceMode = "balanced" | "efficient";
 export type SandboxHotspotId = "runtime" | "network" | "receipt";
 
-export default function SandboxScene({ scrollProgress, resetSignal, performanceMode, runProgress, executionStage, activeHotspot, onHotspotSelect, showHotspots = true, onSceneProgress, onSceneReady }: SandboxSceneProps) {
+export default function SandboxScene({ scrollProgress, resetSignal, performanceMode, runProgress, executionStage, activeHotspot, onHotspotSelect, showHotspots = true, onSceneProgress, onSceneReady, pointerPosition, actionHovered = false }: SandboxSceneProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef(scrollProgress);
   const resetRef = useRef(resetSignal);
@@ -32,6 +34,8 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
   const onHotspotSelectRef = useRef(onHotspotSelect);
   const onSceneProgressRef = useRef(onSceneProgress);
   const onSceneReadyRef = useRef(onSceneReady);
+  const pointerPositionRef = useRef(pointerPosition);
+  const actionHoveredRef = useRef(actionHovered);
   const [unavailable, setUnavailable] = useState(false);
 
   scrollRef.current = scrollProgress;
@@ -43,6 +47,8 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
   onHotspotSelectRef.current = onHotspotSelect;
   onSceneProgressRef.current = onSceneProgress;
   onSceneReadyRef.current = onSceneReady;
+  pointerPositionRef.current = pointerPosition;
+  actionHoveredRef.current = actionHovered;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -178,6 +184,10 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
     key.position.set(3.5, 5.2, 5.8);
     const rim = new THREE.PointLight(0x789eae, 7.5, 12);
     rim.position.set(-3, 1.8, -2.7);
+    const baseRimColor = new THREE.Color(0x789eae);
+    const activeRimColor = new THREE.Color(0xa5c6d4);
+    const baseStreamColor = new THREE.Color(0xc7e0e8);
+    const activeStreamColor = new THREE.Color(0xe0f3f8);
     scene.add(ambient, key, rim);
 
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: 0x071016, roughness: 0.94, metalness: 0.14 }));
@@ -219,6 +229,7 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
     let lastReset = resetRef.current;
     let lastPerformanceMode = performanceRef.current;
     const sequenceStartedAt = performance.now();
+    let actionTone = 0;
 
     const pointOnStream = (path: THREE.Vector3[], position: number) => {
       const scaled = position * (path.length - 1);
@@ -305,14 +316,24 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
       const introProgress = reduceMotion ? 1 : Math.min(1, (time - sequenceStartedAt) / 1500);
       const introEase = 1 - Math.pow(1 - introProgress, 3);
       const idleYaw = reduceMotion ? 0 : Math.sin(time * 0.00034) * (lastPerformanceMode === "efficient" ? 0.028 : 0.052);
-      targetY = -0.56 + easedDepth * 1.38 + idleYaw + dragYaw;
-      targetX = -0.16 + easedDepth * 0.12 + dragPitch;
+      const pointer = pointerPositionRef.current?.current ?? { x: 0, y: 0 };
+      const pointerStrength = reduceMotion ? 0 : 1;
+      targetY = -0.56 + easedDepth * 1.38 + idleYaw + dragYaw + pointer.x * 0.065 * pointerStrength;
+      targetX = -0.16 + easedDepth * 0.12 + dragPitch - pointer.y * 0.036 * pointerStrength;
       root.rotation.y += (targetY - root.rotation.y) * 0.08;
       root.rotation.x += (targetX - root.rotation.x) * 0.08;
       const entryDistance = THREE.MathUtils.lerp(11.4, 9.55, introEase) - easedDepth * 8.5;
       camera.position.z += (entryDistance - camera.position.z) * 0.075;
+      camera.position.x += ((0.1 + pointer.x * 0.19 * pointerStrength) - camera.position.x) * 0.06;
       camera.position.y += ((0.15 + easedDepth * 0.24) - camera.position.y) * 0.075;
-      camera.lookAt(0, -0.27 + easedDepth * 0.2, -0.08);
+      camera.lookAt(pointer.x * 0.07 * pointerStrength, -0.27 + easedDepth * 0.2 - pointer.y * 0.035 * pointerStrength, -0.08);
+      const targetTone = actionHoveredRef.current ? 1 : 0;
+      actionTone += (targetTone - actionTone) * 0.08;
+      ambient.intensity = 2.3 + actionTone * 0.42;
+      key.intensity = 3.2 + actionTone * 0.9;
+      rim.intensity = 7.5 + actionTone * 2.4;
+      rim.color.copy(baseRimColor).lerp(activeRimColor, actionTone);
+      streamMaterial.color.copy(baseStreamColor).lerp(activeStreamColor, actionTone);
       const runIntensity = progressRef.current;
       lights.children.forEach((node, index) => { node.scale.setScalar(0.72 + runIntensity * 0.36 + (reduceMotion ? 0 : Math.sin(time * 0.0022 + index) * 0.1)); });
       hotspotNodes.forEach((hotspot, index) => {

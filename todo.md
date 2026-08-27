@@ -33,3 +33,7 @@
 - [x] Add a staggered first-load fade-in for the hero heading, sub-headline, and essential actions.
 - [x] Add restrained premium hover feedback to the QA Console and Documentation actions.
 - [x] Validate the loading and motion experience, then save a delivery checkpoint.
+- [x] Add subtle pointer-driven camera drift to the WebGL sandbox background.
+- [x] Add restrained pointer parallax for the hero headline and essential actions.
+- [x] Shift the scene lighting smoothly while either hero action is hovered.
+- [x] Validate the pointer-responsive hero and save a delivery checkpoint.
