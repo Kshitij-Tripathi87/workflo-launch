@@ -7,3 +7,5 @@
 The final documentation review identified that the longer desktop navigation needed a dedicated scroll region to keep its footer from overlapping links at shorter viewport heights. The sidebar now uses a flex layout with a comfortably spaced, independently scrollable navigation area.
 
 The final desktop review confirms that the landing page uses a single static sandbox image with concise two-line positioning, while the documentation sidebar keeps active navigation and its footer visually separated.
+
+The current review confirms the Docs sidebar search clearly references both API and documentation content, while the changelog stays compact below the navigation. The landing hero remains reduced to its brand, headline, supporting line, and two actions.

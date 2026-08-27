@@ -2,7 +2,7 @@
  * Minimal Workflo hero — a single immersive runtime surface with only the product thesis
  * and the two essential routes. The interactive sandbox fills the complete viewport.
  */
-import { useEffect, useRef, useState, type FormEvent, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ArrowUpRight, CircleCheckBig } from "lucide-react";
 import { Link } from "wouter";
 import { WORKFLO_HERO } from "@/lib/workfloHero";
@@ -14,36 +14,17 @@ const WORK_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export default function Home() {
   const headlineTagline = WORKFLO_HERO.tagline;
   const [heroImageLoaded, setHeroImageLoaded] = useState(false);
-  const [taglineLength, setTaglineLength] = useState(0);
-  const [taglineComplete, setTaglineComplete] = useState(false);
   const [trialOpen, setTrialOpen] = useState(false);
   const [trialEmail, setTrialEmail] = useState("");
   const [trialConsent, setTrialConsent] = useState(false);
   const [trialConsentAttempted, setTrialConsentAttempted] = useState(false);
   const [trialState, setTrialState] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [trialMessage, setTrialMessage] = useState("");
-  const pointerPosition = useRef({ x: 0, y: 0 });
   const heroRef = useRef<HTMLElement>(null);
   const [reducedMotion, setReducedMotion] = useState(() => {
     try { const stored = window.localStorage.getItem("workflo-reduced-motion"); return stored === "true" || (stored === null && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch { return false; }
   });
   const trialEmailState = trialEmail.length === 0 ? "idle" : WORK_EMAIL_PATTERN.test(trialEmail.trim()) ? "valid" : "invalid";
-
-  const updatePointer = (event: PointerEvent<HTMLElement>) => {
-    if (reducedMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const x = (event.clientX - bounds.left) / bounds.width * 2 - 1;
-    const y = (event.clientY - bounds.top) / bounds.height * 2 - 1;
-    pointerPosition.current = { x, y };
-    heroRef.current?.style.setProperty("--hero-parallax-x", `${x * 8}px`);
-    heroRef.current?.style.setProperty("--hero-parallax-y", `${y * 6}px`);
-  };
-
-  const resetPointer = () => {
-    pointerPosition.current = { x: 0, y: 0 };
-    heroRef.current?.style.setProperty("--hero-parallax-x", "0px");
-    heroRef.current?.style.setProperty("--hero-parallax-y", "0px");
-  };
 
   useEffect(() => {
     const hero = heroRef.current;
@@ -112,30 +93,15 @@ export default function Home() {
     if (!open) { setTrialState("idle"); setTrialMessage(""); setTrialConsent(false); setTrialConsentAttempted(false); }
   };
 
-  useEffect(() => {
-    if (!heroImageLoaded) return;
-    if (reducedMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setTaglineLength(headlineTagline.length); setTaglineComplete(true); return; }
-    setTaglineLength(0);
-    setTaglineComplete(false);
-    let current = 0;
-    const timer = window.setInterval(() => {
-      current += 1;
-      setTaglineLength(current);
-      if (current >= headlineTagline.length) { window.clearInterval(timer); setTaglineComplete(true); }
-    }, 48);
-    return () => window.clearInterval(timer);
-  }, [heroImageLoaded, headlineTagline.length, reducedMotion]);
-
   useEffect(() => { try { window.localStorage.setItem("workflo-reduced-motion", String(reducedMotion)); } catch { /* Preference persistence is optional. */ } }, [reducedMotion]);
 
-  return <main ref={heroRef} className={`minimal-hero ${reducedMotion ? "motion-reduced" : ""}`} onPointerMove={updatePointer} onPointerLeave={resetPointer}>
+  return <main ref={heroRef} className={`minimal-hero ${reducedMotion ? "motion-reduced" : ""}`}>
     <div className="minimal-hero__sandbox-art" aria-hidden="true"><img className="minimal-hero__sandbox-poster" src="/manus-storage/workflo-sandbox-immersive-hero_b63d7110.jpg" alt="" onLoad={() => setHeroImageLoaded(true)} /></div>
     <div className="minimal-hero__scrim" aria-hidden="true" />
-    <Link href="/" className={`minimal-hero__brand ${heroImageLoaded ? "is-ready" : ""}`} aria-label="Workflo home"><span>W/</span><strong>WORKFLO</strong><small>AUTONOMOUS QA</small></Link>
-    <button className={`minimal-hero__motion-control ${heroImageLoaded ? "is-ready" : ""}`} type="button" aria-pressed={reducedMotion} onClick={() => setReducedMotion((value) => !value)}>{reducedMotion ? "MOTION: OFF" : "MOTION: ON"}</button>
-    <div className={`minimal-hero__loader ${heroImageLoaded ? "is-complete" : ""}`} aria-live="polite" aria-label="Loading Workflo sandbox"><span className="minimal-hero__loader-orbit" aria-hidden="true" /><div><span>LOADING SANDBOX</span><strong>{heroImageLoaded ? "100" : ""}%</strong></div><i><b style={{ transform: `scaleX(${heroImageLoaded ? 1 : 0.28})` }} /></i></div>
+    <Link href="/" className={`minimal-hero__brand ${heroImageLoaded ? "is-ready" : ""}`} aria-label="Workflo home"><span>W/</span><strong>WORKFLO</strong></Link>
+    <div className={`minimal-hero__loader ${heroImageLoaded ? "is-complete" : ""}`} aria-live="polite" aria-label="Loading Workflo"><span className="minimal-hero__loader-orbit" aria-hidden="true" /><div><span>LOADING</span></div><i><b style={{ transform: `scaleX(${heroImageLoaded ? 1 : 0.28})` }} /></i></div>
     <div className={`minimal-hero__content ${heroImageLoaded ? "is-ready" : ""}`}>
-      <h1><span className={`typewriter-tagline ${taglineComplete ? "is-complete" : ""}`} aria-label={headlineTagline}><span aria-hidden="true">{headlineTagline.slice(0, taglineLength)}</span><b aria-hidden="true" /></span></h1>
+      <h1><span className="hero-reveal" aria-label={headlineTagline}>{headlineTagline}</span></h1>
       <p>{WORKFLO_HERO.description}</p>
       <div className="minimal-hero__actions"><button className="minimal-hero__primary-action" type="button" onClick={() => setTrialOpen(true)}>Start Free Trial <ArrowUpRight size={17} /></button><Link href="/docs">Documentation <ArrowUpRight size={17} /></Link></div>
     </div>

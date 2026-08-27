@@ -122,3 +122,8 @@
 - [x] Rebalance the documentation side panel with more open spacing and clearer active-state hierarchy.
 - [x] Remove the hero background video and excess motion controls while retaining one restrained static sandbox image.
 - [x] Validate the final simplified landing and documentation experience, then save a delivery checkpoint.
+- [x] Review the Docs sidebar utilities and current landing-page typewriter and content structure.
+- [x] Add a concise changelog surface and improved API-reference search access to the Docs sidebar.
+- [x] Replace the typewriter headline with a motion-safe appear–disappear–appear reveal and remove nonessential hero copy.
+- [x] Apply a restrained dark neumorphic treatment without compromising readability or the established technical aesthetic.
+- [x] Validate the revised Docs sidebar and minimal landing experience, then save a delivery checkpoint.
