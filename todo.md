@@ -75,3 +75,6 @@
 - [x] Replace the current opening hero phrase with a new concise professional headline.
 - [x] Reduce the landing hero to only its headline and a single supporting subheading.
 - [x] Update hero-copy regression coverage and validate the simplified layout.
+- [x] Rename the primary hero action to Start Free Trial and refine its hover animation.
+- [x] Shorten the hero subheading into a punchier editorial line that remains within two lines.
+- [x] Validate the CTA and revised supporting copy with automated and visual checks.
