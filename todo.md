@@ -26,3 +26,6 @@
 - [x] Optimize the 3D update loop for smooth scroll-driven playback and validate the hero experience.
 - [x] Add a scroll-synchronized core-feature reveal that appears only after the camera enters the sandbox.
 - [x] Validate the feature fade-in composition across the hero transition and save a delivery checkpoint.
+- [x] Replace the framed sandbox panel with a full-viewport interactive background scene.
+- [x] Reduce the landing page to a heading, sub-headline, and QA Console and Documentation actions.
+- [x] Remove all nonessential landing-page sections and validate the minimal composition.

@@ -13,12 +13,13 @@ type SandboxSceneProps = {
   executionStage: number;
   activeHotspot: SandboxHotspotId | null;
   onHotspotSelect: (hotspot: SandboxHotspotId) => void;
+  showHotspots?: boolean;
 };
 
 export type ScenePerformanceMode = "balanced" | "efficient";
 export type SandboxHotspotId = "runtime" | "network" | "receipt";
 
-export default function SandboxScene({ scrollProgress, resetSignal, performanceMode, runProgress, executionStage, activeHotspot, onHotspotSelect }: SandboxSceneProps) {
+export default function SandboxScene({ scrollProgress, resetSignal, performanceMode, runProgress, executionStage, activeHotspot, onHotspotSelect, showHotspots = true }: SandboxSceneProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef(scrollProgress);
   const resetRef = useRef(resetSignal);
@@ -151,9 +152,11 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
       root.add(group);
       hotspotNodes.push({ id, group, material: markerMaterial });
     };
-    createHotspot("runtime", [-0.55, -0.46, 0.34]);
-    createHotspot("network", [1.1, -0.61, 0.28]);
-    createHotspot("receipt", [0.46, 0.66, 0.18]);
+    if (showHotspots) {
+      createHotspot("runtime", [-0.55, -0.46, 0.34]);
+      createHotspot("network", [1.1, -0.61, 0.28]);
+      createHotspot("receipt", [0.46, 0.66, 0.18]);
+    }
 
     const lights = new THREE.Group();
     [[-0.95, -0.7, 0.58], [0.46, -0.7, 0.18], [1.14, -0.7, 0.33], [-0.61, -0.7, -0.53]].forEach(([x, y, z]) => {

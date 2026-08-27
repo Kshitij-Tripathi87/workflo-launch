@@ -15,9 +15,10 @@ import Home from "./pages/Home";
 
 function Router() {
   const [location] = useLocation();
+  const homeRoute = location === "/";
   const consoleRoute = location === "/dashboard";
   return <>
-    {!consoleRoute && <WorkfloHeader />}
+    {!homeRoute && !consoleRoute && <WorkfloHeader />}
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/docs" component={Docs} />
@@ -33,4 +34,3 @@ function App() {
 }
 
 export default App;
-
