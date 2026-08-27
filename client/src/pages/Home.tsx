@@ -9,6 +9,8 @@ import { WORKFLO_HERO } from "@/lib/workfloHero";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 
+const WORK_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function Home() {
   const headlineTagline = WORKFLO_HERO.tagline;
   const [heroImageLoaded, setHeroImageLoaded] = useState(false);
@@ -24,6 +26,7 @@ export default function Home() {
   const [reducedMotion, setReducedMotion] = useState(() => {
     try { const stored = window.localStorage.getItem("workflo-reduced-motion"); return stored === "true" || (stored === null && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch { return false; }
   });
+  const trialEmailState = trialEmail.length === 0 ? "idle" : WORK_EMAIL_PATTERN.test(trialEmail.trim()) ? "valid" : "invalid";
 
   const updatePointer = (event: PointerEvent<HTMLElement>) => {
     if (reducedMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -138,7 +141,7 @@ export default function Home() {
           <DialogTitle>Start your free trial.</DialogTitle>
           <DialogDescription>Use a work email to request access to Workflo’s isolated QA environment.</DialogDescription>
         </DialogHeader>
-        {trialState === "success" ? <div className="trial-modal__success" role="status"><div className="trial-modal__success-mark"><CircleCheckBig size={30} /></div><strong>Thank you.</strong><p>{trialMessage}</p><button type="button" onClick={() => changeTrialDialog(false)}>Close</button></div> : <form className="trial-modal__form" onSubmit={submitTrial}><label><span>WORK EMAIL</span><input type="email" name="email" autoComplete="email" placeholder="you@company.com" value={trialEmail} onChange={(event) => setTrialEmail(event.target.value)} required disabled={trialState === "submitting"} /></label><div className="trial-modal__consent"><Checkbox id="trial-consent" checked={trialConsent} onCheckedChange={(checked) => setTrialConsent(checked === true)} disabled={trialState === "submitting"} /><label htmlFor="trial-consent">I agree that Workflo may use this email to process my trial request. See the <Link href="/privacy">Privacy Policy</Link>.</label></div>{trialState === "error" && <p className="trial-modal__error" role="alert">{trialMessage}</p>}<button type="submit" disabled={trialState === "submitting" || !trialConsent}>{trialState === "submitting" ? "Submitting…" : "Request access"}<ArrowUpRight size={16} /></button><small>Your email is used only to process this trial request.</small></form>}
+        {trialState === "success" ? <div className="trial-modal__success" role="status"><div className="trial-modal__success-mark"><CircleCheckBig size={30} /></div><strong>Thank you.</strong><p>{trialMessage}</p><button type="button" onClick={() => changeTrialDialog(false)}>Close</button></div> : <form className="trial-modal__form" onSubmit={submitTrial}><label><span>WORK EMAIL</span><input type="email" name="email" autoComplete="email" placeholder="you@company.com" value={trialEmail} onChange={(event) => setTrialEmail(event.target.value)} required aria-invalid={trialEmailState === "invalid"} aria-describedby="trial-email-feedback" disabled={trialState === "submitting"} /></label><p id="trial-email-feedback" className={`trial-modal__email-feedback is-${trialEmailState}`} aria-live="polite">{trialEmailState === "invalid" ? "Enter a valid work email address." : trialEmailState === "valid" ? "Email format looks good." : ""}</p><div className="trial-modal__consent"><Checkbox id="trial-consent" checked={trialConsent} onCheckedChange={(checked) => setTrialConsent(checked === true)} disabled={trialState === "submitting"} /><label htmlFor="trial-consent">I agree that Workflo may use this email to process my trial request. See the <Link href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</Link>.</label></div>{trialState === "error" && <p className="trial-modal__error" role="alert">{trialMessage}</p>}<button type="submit" disabled={trialState === "submitting" || !trialConsent || trialEmailState !== "valid"}>{trialState === "submitting" ? "Submitting…" : "Request access"}<ArrowUpRight size={16} /></button><small>Your email is used only to process this trial request.</small></form>}
       </DialogContent>
     </Dialog>
   </main>;

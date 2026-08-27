@@ -11,6 +11,10 @@ describe("Workflo product surfaces", () => {
     expect(docs).toContain("RELEASE ARCHIVE");
     expect(docs).toContain("CONTAINER IMAGE");
     expect(docs).toContain("FIRST VERIFICATION");
+    expect(docs).toContain("Copy package command");
+    expect(docs).toContain("Copy release command");
+    expect(docs).toContain("Copy container command");
+    expect(docs).toContain("Copy first-run command");
   });
 
   it("keeps the QA Console empty until a real workspace is connected", () => {
@@ -19,12 +23,16 @@ describe("Workflo product surfaces", () => {
     expect(dashboard).not.toContain("WF-4492");
     expect(dashboard).not.toContain("98.4%");
     expect(dashboard).not.toContain("128");
+    expect(dashboard).toContain("Create your first test run");
   });
 
   it("requires consent and supports success feedback and keyboard or outside dismissal", () => {
     const home = source("../pages/Home.tsx");
     expect(home).toContain('id="trial-consent"');
     expect(home).toContain('href="/privacy"');
+    expect(home).toContain('target="_blank"');
+    expect(home).toContain("WORK_EMAIL_PATTERN");
+    expect(home).toContain("Email format looks good.");
     expect(home).toContain("Thank you.");
     expect(home).toContain("onPointerDownOutside");
     expect(home).toContain("onEscapeKeyDown");

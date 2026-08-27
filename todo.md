@@ -103,3 +103,8 @@
 - [x] Rework the console as a polished empty zero-state with no fabricated metrics, run data, or table values.
 - [x] Add consent, privacy-policy access, success feedback, and explicit outside/Escape dismissal behavior to the trial modal.
 - [x] Validate the revised Docs, console, and modal experiences, then save a delivery checkpoint.
+- [x] Review existing installation command controls, empty-console actions, and trial form state handling.
+- [x] Ensure every installation command exposes an accessible copy-to-clipboard control.
+- [x] Add a Create your first test run action to the empty QA Console.
+- [x] Open the trial-form privacy policy in a new tab and add real-time email validation feedback.
+- [x] Validate the revised interactions and save a delivery checkpoint.
