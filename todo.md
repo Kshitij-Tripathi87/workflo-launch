@@ -131,3 +131,7 @@
 - [x] Restore subtle cursor-driven sandbox-image movement and add a motion-safe pressed-shadow treatment for landing actions.
 - [x] Connect the Docs changelog to an accessible detailed release-notes modal.
 - [x] Validate landing interaction and release-notes behavior, then save a delivery checkpoint.
+- [x] Review the current hero cursor-depth transform behavior and documentation navigation interaction states.
+- [x] Smooth the hero image motion and add a restrained 3D tilt that respects reduced-motion settings.
+- [x] Apply a matching neumorphic pressed state to documentation sidebar links.
+- [x] Validate the refined motion and navigation feedback, then save a delivery checkpoint.

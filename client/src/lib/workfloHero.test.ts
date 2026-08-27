@@ -23,6 +23,8 @@ describe("Workflo hero messaging", () => {
     expect(homeSource).not.toContain("AUTONOMOUS QA</small>");
     expect(homeSource).toContain("updatePointer");
     expect(homeSource).toContain("--hero-image-x");
+    expect(homeSource).toContain("renderPointerDepth");
+    expect(homeSource).toContain("--hero-image-tilt-x");
     expect(homeSource).not.toContain("<SandboxScene");
     expect(homeSource).toContain("/api/trial-signups");
     expect(homeSource).toContain("<Dialog open={trialOpen}");
@@ -32,6 +34,8 @@ describe("Workflo hero messaging", () => {
     expect(styles).toContain(".minimal-hero__sandbox-poster");
     expect(styles).toContain("@keyframes workflo-hero-reveal");
     expect(styles).toContain("inset 5px 5px 12px");
+    expect(styles).toContain("rotateX(var(--hero-image-tilt-x))");
+    expect(styles).toContain(".docs-nav-block a:active");
     expect(styles).toContain(".minimal-hero__content.is-ready > h1");
     expect(styles).toContain(".motion-reduced .minimal-hero__content > *");
     expect(styles).toContain("@keyframes workflo-loader-orbit");

@@ -21,28 +21,43 @@ export default function Home() {
   const [trialState, setTrialState] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [trialMessage, setTrialMessage] = useState("");
   const heroRef = useRef<HTMLElement>(null);
+  const pointerTargetRef = useRef({ imageX: 0, imageY: 0, contentX: 0, contentY: 0, tiltX: 0, tiltY: 0 });
+  const pointerCurrentRef = useRef({ imageX: 0, imageY: 0, contentX: 0, contentY: 0, tiltX: 0, tiltY: 0 });
+  const pointerFrameRef = useRef(0);
   const [reducedMotion, setReducedMotion] = useState(() => {
     try { const stored = window.localStorage.getItem("workflo-reduced-motion"); return stored === "true" || (stored === null && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch { return false; }
   });
   const trialEmailState = trialEmail.length === 0 ? "idle" : WORK_EMAIL_PATTERN.test(trialEmail.trim()) ? "valid" : "invalid";
+
+  const renderPointerDepth = () => {
+    const target = pointerTargetRef.current;
+    const current = pointerCurrentRef.current;
+    (Object.keys(target) as Array<keyof typeof target>).forEach((key) => { current[key] += (target[key] - current[key]) * 0.105; });
+    const hero = heroRef.current;
+    if (hero) {
+      hero.style.setProperty("--hero-image-x", `${current.imageX.toFixed(2)}px`);
+      hero.style.setProperty("--hero-image-y", `${current.imageY.toFixed(2)}px`);
+      hero.style.setProperty("--hero-parallax-x", `${current.contentX.toFixed(2)}px`);
+      hero.style.setProperty("--hero-parallax-y", `${current.contentY.toFixed(2)}px`);
+      hero.style.setProperty("--hero-image-tilt-x", `${current.tiltX.toFixed(2)}deg`);
+      hero.style.setProperty("--hero-image-tilt-y", `${current.tiltY.toFixed(2)}deg`);
+    }
+    const distance = Math.max(...(Object.keys(target) as Array<keyof typeof target>).map((key) => Math.abs(target[key] - current[key])));
+    pointerFrameRef.current = distance > 0.015 ? window.requestAnimationFrame(renderPointerDepth) : 0;
+  };
+
+  const schedulePointerDepth = () => { if (!pointerFrameRef.current) pointerFrameRef.current = window.requestAnimationFrame(renderPointerDepth); };
 
   const updatePointer = (event: PointerEvent<HTMLElement>) => {
     if (event.pointerType !== "mouse" || reducedMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const bounds = event.currentTarget.getBoundingClientRect();
     const x = (event.clientX - bounds.left) / bounds.width * 2 - 1;
     const y = (event.clientY - bounds.top) / bounds.height * 2 - 1;
-    heroRef.current?.style.setProperty("--hero-image-x", `${(x * -8).toFixed(2)}px`);
-    heroRef.current?.style.setProperty("--hero-image-y", `${(y * -6).toFixed(2)}px`);
-    heroRef.current?.style.setProperty("--hero-parallax-x", `${(x * 3).toFixed(2)}px`);
-    heroRef.current?.style.setProperty("--hero-parallax-y", `${(y * 2).toFixed(2)}px`);
+    pointerTargetRef.current = { imageX: x * -7, imageY: y * -5, contentX: x * 2.6, contentY: y * 1.8, tiltX: y * -1.5, tiltY: x * 1.9 };
+    schedulePointerDepth();
   };
 
-  const resetPointer = () => {
-    heroRef.current?.style.setProperty("--hero-image-x", "0px");
-    heroRef.current?.style.setProperty("--hero-image-y", "0px");
-    heroRef.current?.style.setProperty("--hero-parallax-x", "0px");
-    heroRef.current?.style.setProperty("--hero-parallax-y", "0px");
-  };
+  const resetPointer = () => { pointerTargetRef.current = { imageX: 0, imageY: 0, contentX: 0, contentY: 0, tiltX: 0, tiltY: 0 }; schedulePointerDepth(); };
 
   useEffect(() => {
     const hero = heroRef.current;
@@ -79,6 +94,8 @@ export default function Home() {
     onScroll();
     return () => { window.cancelAnimationFrame(frame); window.clearTimeout(releaseTimer); window.removeEventListener("scroll", onScroll); hero.removeEventListener("wheel", onWheel); };
   }, [reducedMotion]);
+
+  useEffect(() => () => window.cancelAnimationFrame(pointerFrameRef.current), []);
 
   const submitTrial = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
