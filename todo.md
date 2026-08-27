@@ -55,3 +55,6 @@
 - [x] Build a clearly labeled local placeholder playground for run status, receipt retrieval, and new-run creation.
 - [x] Add cURL, Python, and Node.js examples for all three documented API endpoints.
 - [x] Validate the placeholder playground behavior and save a delivery checkpoint.
+- [x] Refine the hero headline and supporting copy into sharper Workflo positioning.
+- [x] Add a clear Workflo wordmark at the top-left of the minimal hero.
+- [x] Verify the revised minimal hero and save a delivery checkpoint.

@@ -54,10 +54,11 @@ export default function Home() {
   return <main ref={heroRef} className={`minimal-hero ${isEnteringConsole ? "is-entering" : ""}`} onPointerMove={updatePointer} onPointerLeave={resetPointer}>
     <SandboxScene scrollProgress={0.38} resetSignal={0} performanceMode={performanceMode} runProgress={0.82} executionStage={2} activeHotspot={null} onHotspotSelect={() => undefined} showHotspots={false} onSceneProgress={setSceneProgress} onSceneReady={() => setSceneReady(true)} pointerPosition={pointerPosition} actionHovered={actionHovered} entering={isEnteringConsole} />
     <div className="minimal-hero__scrim" aria-hidden="true" />
+    <Link href="/" className={`minimal-hero__brand ${sceneReady ? "is-ready" : ""}`} aria-label="Workflo home"><span>W/</span><strong>WORKFLO</strong><small>AUTONOMOUS QA</small></Link>
     <div className={`minimal-hero__loader ${sceneReady ? "is-complete" : ""}`} aria-live="polite" aria-label="Loading Workflo sandbox"><div><span>INITIALIZING SANDBOX</span><strong>{Math.round(sceneProgress * 100)}%</strong></div><i><b style={{ transform: `scaleX(${sceneProgress})` }} /></i></div>
     <div className={`minimal-hero__content ${sceneReady ? "is-ready" : ""}`}>
-      <h1>QA execution<br /><em>with an audit trail.</em></h1>
-      <p>Workflo runs tests in isolated environments and produces verifiable execution records.</p>
+      <h1>Autonomous QA.<br /><em>Evidence for every release.</em></h1>
+      <p>Workflo runs software tests in isolated environments and returns a verifiable receipt for every execution.</p>
       <div className="minimal-hero__actions"><Link href="/dashboard" onClick={enterConsole} onPointerEnter={() => setActionHovered(true)} onPointerLeave={() => setActionHovered(false)}>QA Console <ArrowUpRight size={17} /></Link><Link href="/docs" onPointerEnter={() => setActionHovered(true)} onPointerLeave={() => setActionHovered(false)}>Documentation <ArrowUpRight size={17} /></Link></div>
     </div>
     <button className={`minimal-hero__performance ${sceneReady ? "is-ready" : ""}`} type="button" aria-label={`WebGL performance mode: ${performanceMode}. Switch mode.`} onClick={togglePerformance}>{performanceMode === "balanced" ? "◐" : "◑"}</button>
