@@ -164,8 +164,8 @@ function vitePluginTrialSignup(): Plugin {
         });
         req.on("end", async () => {
           try {
-            const payload = JSON.parse(rawBody) as { email?: unknown };
-            await createTrialSignup(payload.email);
+            const payload = JSON.parse(rawBody) as { email?: unknown; consent?: unknown };
+            await createTrialSignup(payload.email, payload.consent);
             res.statusCode = 201;
             res.setHeader("Content-Type", "application/json");
             res.end(JSON.stringify({ ok: true, message: "Your trial request has been recorded." }));

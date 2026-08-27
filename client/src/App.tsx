@@ -12,6 +12,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Dashboard from "./pages/Dashboard";
 import Docs from "./pages/Docs";
 import Home from "./pages/Home";
+import Privacy from "./pages/Privacy";
 
 function Router() {
   const [location] = useLocation();
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/docs" component={Docs} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/privacy" component={Privacy} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

@@ -98,3 +98,8 @@
 - [x] Add a deduplicated database record for trial sign-up emails and verify the backend procedure.
 - [x] Refine the hero image crop for tablet breakpoints and add restrained desktop hover feedback.
 - [x] Validate the trial form, image behavior, and responsive layout, then save a delivery checkpoint.
+- [x] Review the current Docs, Dashboard, and trial-modal implementation against the new onboarding and empty-state requirements.
+- [x] Add installation, download, and further-testing guidance to the technical documentation.
+- [x] Rework the console as a polished empty zero-state with no fabricated metrics, run data, or table values.
+- [x] Add consent, privacy-policy access, success feedback, and explicit outside/Escape dismissal behavior to the trial modal.
+- [x] Validate the revised Docs, console, and modal experiences, then save a delivery checkpoint.

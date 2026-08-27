@@ -19,12 +19,17 @@ export function normalizeTrialEmail(value: unknown) {
   return email;
 }
 
-export async function persistTrialSignup(value: unknown, executor: TrialSignupExecutor, source = "landing_hero") {
+export function requireTrialConsent(value: unknown) {
+  if (value !== true) throw new TrialSignupInputError("Please confirm consent before requesting a trial.");
+}
+
+export async function persistTrialSignup(value: unknown, consent: unknown, executor: TrialSignupExecutor, source = "landing_hero") {
   const email = normalizeTrialEmail(value);
+  requireTrialConsent(consent);
   await executor.execute(
-    `INSERT INTO trial_signups (email, source)
-     VALUES (?, ?)
-     ON DUPLICATE KEY UPDATE updatedAt = CURRENT_TIMESTAMP`,
+    `INSERT INTO trial_signups (email, source, consentedAt)
+     VALUES (?, ?, CURRENT_TIMESTAMP)
+     ON DUPLICATE KEY UPDATE updatedAt = CURRENT_TIMESTAMP, consentedAt = CURRENT_TIMESTAMP`,
     [email, source],
   );
   return { email };
@@ -36,6 +41,6 @@ function getPool() {
   return pool;
 }
 
-export async function createTrialSignup(value: unknown, source = "landing_hero") {
-  return persistTrialSignup(value, getPool(), source);
+export async function createTrialSignup(value: unknown, consent: unknown, source = "landing_hero") {
+  return persistTrialSignup(value, consent, getPool(), source);
 }

@@ -14,7 +14,7 @@ async function startServer() {
 
   app.post("/api/trial-signups", async (req, res) => {
     try {
-      await createTrialSignup(req.body?.email);
+      await createTrialSignup(req.body?.email, req.body?.consent);
       res.status(201).json({ ok: true, message: "Your trial request has been recorded." });
     } catch (error) {
       if (error instanceof TrialSignupInputError) {

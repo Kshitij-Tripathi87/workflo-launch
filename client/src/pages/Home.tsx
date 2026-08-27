@@ -3,10 +3,11 @@
  * and the two essential routes. The interactive sandbox fills the complete viewport.
  */
 import { useEffect, useRef, useState, type FormEvent, type PointerEvent } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, CircleCheckBig } from "lucide-react";
 import { Link } from "wouter";
 import { WORKFLO_HERO } from "@/lib/workfloHero";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function Home() {
   const headlineTagline = WORKFLO_HERO.tagline;
@@ -15,6 +16,7 @@ export default function Home() {
   const [taglineComplete, setTaglineComplete] = useState(false);
   const [trialOpen, setTrialOpen] = useState(false);
   const [trialEmail, setTrialEmail] = useState("");
+  const [trialConsent, setTrialConsent] = useState(false);
   const [trialState, setTrialState] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [trialMessage, setTrialMessage] = useState("");
   const pointerPosition = useRef({ x: 0, y: 0 });
@@ -84,12 +86,12 @@ export default function Home() {
       const response = await fetch("/api/trial-signups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: trialEmail }),
+        body: JSON.stringify({ email: trialEmail, consent: trialConsent }),
       });
       const payload = await response.json().catch(() => ({})) as { ok?: boolean; message?: string };
       if (!response.ok || !payload.ok) throw new Error(payload.message || "Trial requests are temporarily unavailable. Please try again.");
       setTrialState("success");
-      setTrialMessage("Request recorded. We’ll be in touch about your trial.");
+      setTrialMessage("Your access request is recorded. We’ll be in touch about your trial.");
       setTrialEmail("");
     } catch (error) {
       setTrialState("error");
@@ -99,7 +101,7 @@ export default function Home() {
 
   const changeTrialDialog = (open: boolean) => {
     setTrialOpen(open);
-    if (!open) { setTrialState("idle"); setTrialMessage(""); }
+    if (!open) { setTrialState("idle"); setTrialMessage(""); setTrialConsent(false); }
   };
 
   useEffect(() => {
@@ -130,13 +132,13 @@ export default function Home() {
       <div className="minimal-hero__actions"><button className="minimal-hero__primary-action" type="button" onClick={() => setTrialOpen(true)}>Start Free Trial <ArrowUpRight size={17} /></button><Link href="/docs">Documentation <ArrowUpRight size={17} /></Link></div>
     </div>
     <Dialog open={trialOpen} onOpenChange={changeTrialDialog}>
-      <DialogContent className="trial-modal">
+      <DialogContent className="trial-modal" onPointerDownOutside={() => changeTrialDialog(false)} onEscapeKeyDown={() => changeTrialDialog(false)}>
         <DialogHeader>
           <span className="trial-modal__eyebrow">WORKFLO / TRIAL ACCESS</span>
           <DialogTitle>Start your free trial.</DialogTitle>
           <DialogDescription>Use a work email to request access to Workflo’s isolated QA environment.</DialogDescription>
         </DialogHeader>
-        {trialState === "success" ? <div className="trial-modal__success" role="status"><strong>Request received.</strong><p>{trialMessage}</p><button type="button" onClick={() => changeTrialDialog(false)}>Close</button></div> : <form className="trial-modal__form" onSubmit={submitTrial}><label><span>WORK EMAIL</span><input type="email" name="email" autoComplete="email" placeholder="you@company.com" value={trialEmail} onChange={(event) => setTrialEmail(event.target.value)} required disabled={trialState === "submitting"} /></label>{trialState === "error" && <p className="trial-modal__error" role="alert">{trialMessage}</p>}<button type="submit" disabled={trialState === "submitting"}>{trialState === "submitting" ? "Submitting…" : "Request access"}<ArrowUpRight size={16} /></button><small>Your email is used only to process this trial request.</small></form>}
+        {trialState === "success" ? <div className="trial-modal__success" role="status"><div className="trial-modal__success-mark"><CircleCheckBig size={30} /></div><strong>Thank you.</strong><p>{trialMessage}</p><button type="button" onClick={() => changeTrialDialog(false)}>Close</button></div> : <form className="trial-modal__form" onSubmit={submitTrial}><label><span>WORK EMAIL</span><input type="email" name="email" autoComplete="email" placeholder="you@company.com" value={trialEmail} onChange={(event) => setTrialEmail(event.target.value)} required disabled={trialState === "submitting"} /></label><div className="trial-modal__consent"><Checkbox id="trial-consent" checked={trialConsent} onCheckedChange={(checked) => setTrialConsent(checked === true)} disabled={trialState === "submitting"} /><label htmlFor="trial-consent">I agree that Workflo may use this email to process my trial request. See the <Link href="/privacy">Privacy Policy</Link>.</label></div>{trialState === "error" && <p className="trial-modal__error" role="alert">{trialMessage}</p>}<button type="submit" disabled={trialState === "submitting" || !trialConsent}>{trialState === "submitting" ? "Submitting…" : "Request access"}<ArrowUpRight size={16} /></button><small>Your email is used only to process this trial request.</small></form>}
       </DialogContent>
     </Dialog>
   </main>;

@@ -30,6 +30,7 @@ export const trialSignups = mysqlTable("trial_signups", {
   id: int("id").autoincrement().primaryKey(),
   email: varchar("email", { length: 320 }).notNull().unique(),
   source: varchar("source", { length: 64 }).notNull().default("landing_hero"),
+  consentedAt: timestamp("consentedAt").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
