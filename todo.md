@@ -11,3 +11,6 @@
 - [x] Add privacy-first and security-compliance information to the hero section.
 - [x] Enrich the execution panel and add subtle hover feedback throughout the landing page.
 - [x] Validate the revised animated experience and save a delivery checkpoint.
+- [x] Replace the static hero sandbox art with an interactive WebGL scene.
+- [x] Add explicit rotate, reset, and motion-reduction controls for the scene.
+- [x] Validate the WebGL scene across desktop and mobile layouts, then save a delivery checkpoint.

@@ -5,8 +5,8 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link } from "wouter";
 import { ArrowDownRight, ArrowUpRight, Bot, Check, ChevronRight, FileCheck2, LockKeyhole, Play, ScanSearch, ShieldCheck, Terminal } from "lucide-react";
+import SandboxScene from "@/components/SandboxScene";
 
-const heroImage = "/manus-storage/workflo-hero-sandbox_96e372d8.jpg";
 const receiptImage = "/manus-storage/workflo-receipt-proof_041eec88.jpg";
 const runStages = [
   { label: "Environment ready", detail: "Isolated browser allocated", trace: "runtime provisioned", progress: 24, step: 0, readout: "T+00:00.42" },
@@ -22,7 +22,7 @@ function SectionIndex({ index, label }: { index: string; label: string }) { retu
 export default function Home() {
   const [runStage, setRunStage] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [hoverTilt, setHoverTilt] = useState({ x: 0, y: 0 });
+  const [resetSignal, setResetSignal] = useState(0);
   const heroRef = useRef<HTMLElement>(null);
   const activeRun = runStages[runStage];
 
@@ -46,11 +46,8 @@ export default function Home() {
   }, []);
 
   const heroStyle = {
-    "--box-scale": `${1 + scrollProgress * 0.72}`,
-    "--box-shift-x": `${scrollProgress * -17}%`,
-    "--box-shift-y": `${scrollProgress * 4}%`,
-    "--box-rotation": `${-7 + hoverTilt.x * 4 - scrollProgress * 4}deg`,
-    "--box-tilt": `${hoverTilt.y * -3 + scrollProgress * 4}deg`,
+    "--box-scale": `${1 + scrollProgress * 0.1}`,
+    "--box-shift-y": `${scrollProgress * 3}%`,
   } as CSSProperties;
   const entryOpacity = Math.min(1, Math.max(0, (scrollProgress - 0.28) * 2.1));
 
@@ -68,13 +65,15 @@ export default function Home() {
             <div className="hero-proof-row"><div><span className="proof-value">01</span><span className="proof-label">isolated<br />environment</span></div><div><span className="proof-value">100%</span><span className="proof-label">recorded<br />execution</span></div><div><span className="proof-value">0</span><span className="proof-label">production credentials<br />required</span></div></div>
             <div className="hero-assurance" aria-label="Privacy and security controls"><div><ShieldCheck size={15} /><span>PRIVACY-FIRST EXECUTION</span><strong>Ephemeral environments keep each run contained.</strong></div><div><LockKeyhole size={15} /><span>CONTROLLED ACCESS</span><strong>No production credentials are required for execution.</strong></div><div><FileCheck2 size={15} /><span>COMPLIANCE EVIDENCE</span><strong>Receipts provide a durable record for review.</strong></div></div>
           </div>
-          <div className="hero-visual reveal-up reveal-delay-1" style={heroStyle} onPointerMove={(event) => { const rect = event.currentTarget.getBoundingClientRect(); setHoverTilt({ x: (event.clientX - rect.left) / rect.width - .5, y: (event.clientY - rect.top) / rect.height - .5 }); }} onPointerLeave={() => setHoverTilt({ x: 0, y: 0 })}>
-            <img src={heroImage} alt="Abstract isolated Workflo testing sandbox" />
+          <div className="hero-visual hero-visual--webgl reveal-up reveal-delay-1" style={heroStyle}>
+            <SandboxScene scrollProgress={scrollProgress} resetSignal={resetSignal} />
             <div className="hero-visual-shade" />
             <div className="floating-label floating-label--top">EXECUTION / WF-4492</div>
             <div className="hero-live-panel" aria-live="polite"><div><span className="live-panel-label">CURRENT STATE</span><strong>{activeRun.label}</strong><small>{activeRun.detail}</small></div><SignalDot /><span className="live-run-id">{activeRun.readout} / {activeRun.progress}%</span><div className="live-meter"><i style={{ transform: `scaleX(${activeRun.progress / 100})` }} /></div></div>
             <div className="hero-entry-copy" style={{ opacity: entryOpacity, transform: `translate(-50%, calc(-50% + ${(1 - entryOpacity) * 28}px))` }}><span>ISOLATED RUNTIME / ACTIVE</span><strong>The test stays contained.</strong><p>Scroll through the environment to examine the controls Workflo uses to keep autonomous execution private and inspectable.</p></div>
             <div className="floating-label floating-label--bottom"><SignalDot /> <span>{activeRun.trace}</span></div>
+            <div className="scene-metadata" aria-hidden="true"><span>ENCLOSURE / 03</span><span>RUNTIME / EPHEMERAL</span><span>MODE / INSPECT</span></div>
+            <div className="scene-controls"><span>DRAG TO INSPECT</span><button type="button" onClick={() => setResetSignal((current) => current + 1)}>Reset view</button></div>
             <div className="hero-corner hero-corner--a" /><div className="hero-corner hero-corner--b" />
           </div>
         </div>
