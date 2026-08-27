@@ -14,3 +14,6 @@
 - [x] Replace the static hero sandbox art with an interactive WebGL scene.
 - [x] Add explicit rotate, reset, and motion-reduction controls for the scene.
 - [x] Validate the WebGL scene across desktop and mobile layouts, then save a delivery checkpoint.
+- [x] Add a user-controlled WebGL performance mode with adaptive scene quality.
+- [x] Add restrained steel-blue data-stream particles that communicate active QA execution.
+- [x] Verify high- and low-performance scene states and save a delivery checkpoint.

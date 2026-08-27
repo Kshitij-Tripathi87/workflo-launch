@@ -8,16 +8,21 @@ import * as THREE from "three";
 type SandboxSceneProps = {
   scrollProgress: number;
   resetSignal: number;
+  performanceMode: ScenePerformanceMode;
 };
 
-export default function SandboxScene({ scrollProgress, resetSignal }: SandboxSceneProps) {
+export type ScenePerformanceMode = "balanced" | "efficient";
+
+export default function SandboxScene({ scrollProgress, resetSignal, performanceMode }: SandboxSceneProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef(scrollProgress);
   const resetRef = useRef(resetSignal);
+  const performanceRef = useRef<ScenePerformanceMode>(performanceMode);
   const [unavailable, setUnavailable] = useState(false);
 
   scrollRef.current = scrollProgress;
   resetRef.current = resetSignal;
+  performanceRef.current = performanceMode;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -25,7 +30,7 @@ export default function SandboxScene({ scrollProgress, resetSignal }: SandboxSce
 
     let renderer: THREE.WebGLRenderer;
     try {
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "default" });
     } catch {
       setUnavailable(true);
       return;
@@ -34,7 +39,7 @@ export default function SandboxScene({ scrollProgress, resetSignal }: SandboxSce
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(31, 1, 0.1, 100);
     camera.position.set(0.1, 0.15, 8.6);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.7));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, performanceMode === "efficient" ? 1 : 1.65));
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     host.appendChild(renderer.domElement);
@@ -108,6 +113,16 @@ export default function SandboxScene({ scrollProgress, resetSignal }: SandboxSce
     const tracePoints = [[[-1.1, -0.79, 0.58], [-0.64, -0.79, 0.58], [-0.33, -0.79, 0.18], [0.24, -0.79, 0.18]], [[-1.23, -0.78, -0.53], [-0.65, -0.78, -0.53], [-0.41, -0.78, -0.19], [0.17, -0.78, -0.19]], [[0.76, -0.78, -0.51], [1.14, -0.78, -0.51], [1.14, -0.78, 0.33]]];
     tracePoints.forEach((points) => root.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points.map(([x, y, z]) => new THREE.Vector3(x, y, z))), traceMaterial)));
 
+    const streamPaths = tracePoints.map((points) => points.map(([x, y, z]) => new THREE.Vector3(x, y, z)));
+    const maxParticles = 56;
+    const streamPositions = new Float32Array(maxParticles * 3);
+    const streamGeometry = new THREE.BufferGeometry();
+    streamGeometry.setAttribute("position", new THREE.BufferAttribute(streamPositions, 3));
+    const streamMaterial = new THREE.PointsMaterial({ color: 0xc7e0e8, size: 0.092, sizeAttenuation: true, transparent: true, opacity: 0.96, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false });
+    const streamParticles = new THREE.Points(streamGeometry, streamMaterial);
+    streamParticles.renderOrder = 5;
+    root.add(streamParticles);
+
     const lights = new THREE.Group();
     [[-0.95, -0.7, 0.58], [0.46, -0.7, 0.18], [1.14, -0.7, 0.33], [-0.61, -0.7, -0.53]].forEach(([x, y, z]) => {
       const node = new THREE.Mesh(new THREE.SphereGeometry(0.052, 16, 16), signal);
@@ -130,6 +145,12 @@ export default function SandboxScene({ scrollProgress, resetSignal }: SandboxSce
 
     let width = 1;
     let height = 1;
+    const setQuality = (mode: ScenePerformanceMode) => {
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, mode === "efficient" ? 1 : 1.65));
+      renderer.setSize(width, height, false);
+      streamMaterial.size = mode === "efficient" ? 0.068 : 0.092;
+      streamMaterial.opacity = mode === "efficient" ? 0.72 : 0.96;
+    };
     const resize = () => {
       const bounds = host.getBoundingClientRect();
       width = Math.max(1, bounds.width);
@@ -151,6 +172,28 @@ export default function SandboxScene({ scrollProgress, resetSignal }: SandboxSce
     let targetY = root.rotation.y;
     let targetX = root.rotation.x;
     let lastReset = resetRef.current;
+    let lastPerformanceMode = performanceRef.current;
+
+    const pointOnStream = (path: THREE.Vector3[], position: number) => {
+      const scaled = position * (path.length - 1);
+      const start = Math.min(path.length - 2, Math.floor(scaled));
+      return path[start].clone().lerp(path[start + 1], scaled - start);
+    };
+
+    const updateStreams = (time: number, mode: ScenePerformanceMode, frozen: boolean) => {
+      const count = mode === "efficient" ? 16 : maxParticles;
+      streamGeometry.setDrawRange(0, count);
+      for (let index = 0; index < count; index += 1) {
+        const path = streamPaths[index % streamPaths.length];
+        const offset = ((index / count) + (frozen ? 0.28 : time * 0.00013) + (index % 3) * 0.13) % 1;
+        const point = pointOnStream(path, offset);
+        const ripple = frozen ? 0 : Math.sin(time * 0.004 + index) * 0.024;
+        streamPositions[index * 3] = point.x;
+        streamPositions[index * 3 + 1] = point.y + ripple;
+        streamPositions[index * 3 + 2] = point.z;
+      }
+      streamGeometry.attributes.position.needsUpdate = true;
+    };
 
     const onPointerDown = (event: PointerEvent) => {
       dragging = true;
@@ -180,18 +223,23 @@ export default function SandboxScene({ scrollProgress, resetSignal }: SandboxSce
 
     let animationFrame = 0;
     const draw = (time: number) => {
+      if (lastPerformanceMode !== performanceRef.current) {
+        lastPerformanceMode = performanceRef.current;
+        setQuality(lastPerformanceMode);
+      }
       if (lastReset !== resetRef.current) {
         lastReset = resetRef.current;
         targetY = -0.56;
         targetX = -0.16;
       }
-      if (!dragging && !reduceMotion) targetY += 0.0014;
+      if (!dragging && !reduceMotion) targetY += lastPerformanceMode === "efficient" ? 0.0007 : 0.0014;
       root.rotation.y += (targetY - root.rotation.y) * 0.08;
       root.rotation.x += (targetX - root.rotation.x) * 0.08;
       const depth = scrollRef.current;
       camera.position.z += ((8.6 - depth * 1.4) - camera.position.z) * 0.06;
       camera.position.y += ((0.15 + depth * 0.18) - camera.position.y) * 0.06;
       lights.children.forEach((node, index) => { node.scale.setScalar(0.85 + Math.sin(time * 0.0022 + index) * 0.12); });
+      updateStreams(time, lastPerformanceMode, reduceMotion);
       renderer.render(scene, camera);
       animationFrame = window.requestAnimationFrame(draw);
     };
@@ -205,7 +253,7 @@ export default function SandboxScene({ scrollProgress, resetSignal }: SandboxSce
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
       renderer.domElement.removeEventListener("pointercancel", onPointerUp);
       scene.traverse((object) => {
-        if (object instanceof THREE.Mesh || object instanceof THREE.Line || object instanceof THREE.LineSegments) {
+        if (object instanceof THREE.Mesh || object instanceof THREE.Line || object instanceof THREE.LineSegments || object instanceof THREE.Points) {
           object.geometry.dispose();
           const materials = Array.isArray(object.material) ? object.material : [object.material];
           materials.forEach((material) => material.dispose());

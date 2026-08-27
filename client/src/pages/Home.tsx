@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link } from "wouter";
 import { ArrowDownRight, ArrowUpRight, Bot, Check, ChevronRight, FileCheck2, LockKeyhole, Play, ScanSearch, ShieldCheck, Terminal } from "lucide-react";
-import SandboxScene from "@/components/SandboxScene";
+import SandboxScene, { type ScenePerformanceMode } from "@/components/SandboxScene";
 
 const receiptImage = "/manus-storage/workflo-receipt-proof_041eec88.jpg";
 const runStages = [
@@ -23,6 +23,7 @@ export default function Home() {
   const [runStage, setRunStage] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [resetSignal, setResetSignal] = useState(0);
+  const [performanceMode, setPerformanceMode] = useState<ScenePerformanceMode>("balanced");
   const heroRef = useRef<HTMLElement>(null);
   const activeRun = runStages[runStage];
 
@@ -66,14 +67,14 @@ export default function Home() {
             <div className="hero-assurance" aria-label="Privacy and security controls"><div><ShieldCheck size={15} /><span>PRIVACY-FIRST EXECUTION</span><strong>Ephemeral environments keep each run contained.</strong></div><div><LockKeyhole size={15} /><span>CONTROLLED ACCESS</span><strong>No production credentials are required for execution.</strong></div><div><FileCheck2 size={15} /><span>COMPLIANCE EVIDENCE</span><strong>Receipts provide a durable record for review.</strong></div></div>
           </div>
           <div className="hero-visual hero-visual--webgl reveal-up reveal-delay-1" style={heroStyle}>
-            <SandboxScene scrollProgress={scrollProgress} resetSignal={resetSignal} />
+            <SandboxScene scrollProgress={scrollProgress} resetSignal={resetSignal} performanceMode={performanceMode} />
             <div className="hero-visual-shade" />
             <div className="floating-label floating-label--top">EXECUTION / WF-4492</div>
             <div className="hero-live-panel" aria-live="polite"><div><span className="live-panel-label">CURRENT STATE</span><strong>{activeRun.label}</strong><small>{activeRun.detail}</small></div><SignalDot /><span className="live-run-id">{activeRun.readout} / {activeRun.progress}%</span><div className="live-meter"><i style={{ transform: `scaleX(${activeRun.progress / 100})` }} /></div></div>
             <div className="hero-entry-copy" style={{ opacity: entryOpacity, transform: `translate(-50%, calc(-50% + ${(1 - entryOpacity) * 28}px))` }}><span>ISOLATED RUNTIME / ACTIVE</span><strong>The test stays contained.</strong><p>Scroll through the environment to examine the controls Workflo uses to keep autonomous execution private and inspectable.</p></div>
             <div className="floating-label floating-label--bottom"><SignalDot /> <span>{activeRun.trace}</span></div>
-            <div className="scene-metadata" aria-hidden="true"><span>ENCLOSURE / 03</span><span>RUNTIME / EPHEMERAL</span><span>MODE / INSPECT</span></div>
-            <div className="scene-controls"><span>DRAG TO INSPECT</span><button type="button" onClick={() => setResetSignal((current) => current + 1)}>Reset view</button></div>
+            <div className="scene-metadata" aria-hidden="true"><span>ENCLOSURE / 03</span><span>RUNTIME / EPHEMERAL</span><span>STREAM / ACTIVE</span><span>MODE / INSPECT</span></div>
+            <div className="scene-controls"><span>DRAG TO INSPECT</span><button className="scene-performance-toggle" type="button" aria-pressed={performanceMode === "efficient"} onClick={() => setPerformanceMode((mode) => mode === "balanced" ? "efficient" : "balanced")}>{performanceMode === "balanced" ? "Performance: balanced" : "Performance: efficient"}</button><button type="button" onClick={() => setResetSignal((current) => current + 1)}>Reset view</button></div>
             <div className="hero-corner hero-corner--a" /><div className="hero-corner hero-corner--b" />
           </div>
         </div>
