@@ -44,10 +44,14 @@
 - [x] Add richer technical explanations for isolation, execution lifecycle, receipts, and CI integration.
 - [x] Add visual protocol and receipt diagrams to improve comprehension.
 - [x] Validate the upgraded documentation across desktop and mobile, then save a delivery checkpoint.
-- [ ] Add client-side reference search across Workflo documentation and run-status terms.
-- [ ] Add reusable copy-to-clipboard confirmation for all technical examples.
-- [ ] Add a dedicated security and compliance reference with visual isolation and encryption indicators.
+- [x] Add client-side reference search across Workflo documentation and run-status terms.
+- [x] Add reusable copy-to-clipboard confirmation for all technical examples.
+- [x] Ensure copy confirmations reflect actual clipboard success and expose an unavailable state.
+- [x] Add a dedicated security and compliance reference with visual isolation and encryption indicators.
 - [x] Validate the expanded documentation interactions and save a delivery checkpoint.
 - [x] Add cURL, Python, and Node.js variants for the API run-status example.
 - [x] Add Cmd/Ctrl+K search focus and highlighted search-result terms.
 - [x] Validate language switching and keyboard search behavior, then save a delivery checkpoint.
+- [x] Build a clearly labeled local placeholder playground for run status, receipt retrieval, and new-run creation.
+- [x] Add cURL, Python, and Node.js examples for all three documented API endpoints.
+- [x] Validate the placeholder playground behavior and save a delivery checkpoint.
