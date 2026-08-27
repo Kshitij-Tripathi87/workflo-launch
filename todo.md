@@ -81,3 +81,7 @@
 - [x] Review the Workflo hero at small mobile breakpoints and identify readability or spacing issues.
 - [x] Improve mobile heading, subheading, action layout, and tap-target spacing while preserving the minimal composition.
 - [x] Validate the responsive hero and save a delivery checkpoint.
+- [x] Review the current non-WebGL fallback and initial hero reveal behavior.
+- [x] Add a high-quality static sandbox fallback for devices without WebGL support.
+- [x] Refine the initial hero text and CTA fade-in while respecting reduced-motion settings.
+- [x] Validate fallback rendering and entry animation, then save a delivery checkpoint.

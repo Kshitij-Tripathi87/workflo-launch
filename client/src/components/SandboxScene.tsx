@@ -454,6 +454,6 @@ export default function SandboxScene({ scrollProgress, resetSignal, performanceM
     };
   }, []);
 
-  if (unavailable) return <div className="sandbox-fallback" role="img" aria-label="Interactive 3D sandbox unavailable"><span>3D scene unavailable</span><small>Your browser does not support the required graphics features.</small></div>;
+  if (unavailable) return <div className="sandbox-fallback sandbox-fallback--hero" role="img" aria-label="Workflo isolated sandbox environment" />;
   return <div ref={hostRef} className="sandbox-webgl" role="application" aria-label="Interactive Workflo isolated sandbox model" />;
 }
