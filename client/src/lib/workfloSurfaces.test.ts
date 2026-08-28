@@ -18,6 +18,10 @@ describe("Workflo product surfaces", () => {
     expect(docs).toContain("Copy release command");
     expect(docs).toContain("Copy container command");
     expect(docs).toContain("Copy first-run command");
+    expect(docs).toContain("Start with one test.");
+    expect(docs).toContain("Other installation paths");
+    expect(docs).toContain('id="how-it-works"');
+    expect(docs).toContain("Open local request preview");
   });
 
   it("keeps the QA Console empty until a real workspace is connected", () => {

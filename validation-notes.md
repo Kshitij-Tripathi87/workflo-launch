@@ -21,3 +21,5 @@ The landing motion preference control was verified in the browser: its visible l
 The visitor-facing Motion: On preference was restored after validation. A subsequent pointer check confirmed both nonzero sandbox tilt and a gradually increasing glare opacity.
 
 The updated Docs review confirms the changelog buttons remain available in the sidebar and still open the detailed release-notes modal after receiving the matching pressed-depth treatment.
+
+The documentation redesign was checked at desktop and mobile widths. The revised page keeps its setup path, API examples, search, code-copy controls, changelog modal, and local-only preview while using expandable detail to keep the initial reading flow concise.

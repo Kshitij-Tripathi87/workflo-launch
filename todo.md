@@ -140,3 +140,7 @@
 - [x] Refine sandbox tilt for ultrawide screens and add a restrained cursor-driven glare layer.
 - [x] Apply matching neumorphic pressed feedback to Docs changelog controls.
 - [x] Validate the motion preference, sandbox effect, and sidebar interactions, then save a delivery checkpoint.
+- [x] Review the current Workflo documentation sections, navigation, and interactions for consolidation opportunities.
+- [x] Reorganize the Docs page into a concise getting-started, guides, API reference, and support information architecture.
+- [x] Apply a clean reading layout with focused search, code-copy controls, progressive disclosure, and minimal chrome.
+- [x] Validate the redesigned documentation on desktop and mobile and save a delivery checkpoint.
